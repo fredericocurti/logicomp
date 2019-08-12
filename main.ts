@@ -3,8 +3,8 @@ import { Token } from './token'
 import { Parser } from './parser'
 
 const input = process.argv[2]
-// const tokenizer = new Tokenizer(input)
-//tokenizer.selectNext()
-//console.log(input)
-
-Parser.run(input)
+if (input) {
+    Parser.run(input)
+} else {
+    throw new Error('Missing input string')
+}
