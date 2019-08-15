@@ -18,7 +18,12 @@ export class Tokenizer {
 
         while (this.position < this.origin.length) {
             char = this.origin[this.position]
+            if (!parseInt(char) && number.length > 0) {
+                return new Token('INT', parseInt(number))
+            }
+
             this.position++
+
             if (char === ' ') {
                 if (number.length > 0) {
                     return new Token('INT', parseInt(number))
@@ -27,6 +32,10 @@ export class Tokenizer {
                 return new Token('PLUS', '+')
             } else if (char === '-') {
                 return new Token('MINUS', '-')
+            } else if (char === '*') {
+                return new Token('MULTIPLY', '*')
+            } else if (char === '/') {
+                return new Token('DIVISION', '/')
             } else if (parseInt(char)) {
                 number += char
                 continue

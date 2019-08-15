@@ -14,6 +14,9 @@ var Tokenizer = /** @class */ (function () {
         var number = '';
         while (this.position < this.origin.length) {
             char = this.origin[this.position];
+            if (!parseInt(char) && number.length > 0) {
+                return new token_1.Token('INT', parseInt(number));
+            }
             this.position++;
             if (char === ' ') {
                 if (number.length > 0) {
@@ -25,6 +28,12 @@ var Tokenizer = /** @class */ (function () {
             }
             else if (char === '-') {
                 return new token_1.Token('MINUS', '-');
+            }
+            else if (char === '*') {
+                return new token_1.Token('MULTIPLY', '*');
+            }
+            else if (char === '/') {
+                return new token_1.Token('DIVISION', '/');
             }
             else if (parseInt(char)) {
                 number += char;

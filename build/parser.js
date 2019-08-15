@@ -18,10 +18,41 @@ var Parser = /** @class */ (function () {
      */
     Parser.parseExpression = function () {
         var token = Parser.tokens.selectNext();
+        var result = 0;
+        var op = '+';
         while (token.type !== 'EOF') {
             console.log(token);
+            switch (token.type) {
+                case 'MULTIPLY':
+                    op = token.value;
+                    break;
+                case 'DIVISION':
+                    op = token.value;
+                    break;
+                case 'MINUS':
+                    op = token.value;
+                    break;
+                case 'PLUS':
+                    op = token.value;
+                    break;
+                case 'INT':
+                    if (op === '+') {
+                        result += token.value;
+                    }
+                    if (op === '-') {
+                        result -= token.value;
+                    }
+                    if (op === '*') {
+                        result *= token.value;
+                    }
+                    if (op === '/') {
+                        result /= token.value;
+                    }
+                    break;
+            }
             token = Parser.tokens.selectNext();
         }
+        return result;
     };
     return Parser;
 }());
