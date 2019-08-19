@@ -12,3 +12,9 @@ Clone o repositório, e no diretório execute:
 $ npm install
 $ npm run main '789  + 324 + 12'
 ```
+
+## EBNF
+
+`expression = term, { (“+” | “-”), term} ;`
+
+`term = number, { (“*” | “/”), number} ;`
