@@ -10,43 +10,46 @@ var Tokenizer = /** @class */ (function () {
     /** Lê o próximo token e atualiza o atributo actual */
     Tokenizer.prototype.selectNext = function () {
         var char = null;
-        var token = new token_1.Token('EOF', null);
+        var nextChar = null;
         var number = '';
         while (this.position < this.origin.length) {
             char = this.origin[this.position];
-            if (!parseInt(char) && number.length > 0) {
-                return new token_1.Token('INT', parseInt(number));
-            }
+            nextChar = this.origin[this.position + 1];
             this.position++;
-            if (char === ' ') {
-                if (number.length > 0) {
-                    return new token_1.Token('INT', parseInt(number));
-                }
-            }
-            else if (char === '+') {
-                return new token_1.Token('PLUS', '+');
-            }
-            else if (char === '-') {
-                return new token_1.Token('MINUS', '-');
-            }
-            else if (char === '*') {
-                return new token_1.Token('MULTIPLY', '*');
-            }
-            else if (char === '/') {
-                return new token_1.Token('DIVISION', '/');
-            }
-            else if (parseInt(char)) {
-                number += char;
+            // Skip whitespace or newline character
+            if (char === ' ' || char === '\n') {
                 continue;
             }
-            else {
-                throw new Error("Invalid character " + char + " at position " + (this.position - 1));
+            // Stack number
+            if (char && char.match(/[0-9]/)) {
+                number += char;
+                if (nextChar === undefined || !nextChar.match(/[0-9]/)) {
+                    this.actual = new token_1.Token('INT', parseInt(number));
+                    return this.actual;
+                }
+                continue;
             }
+            // Operators
+            if (char === '+') {
+                this.actual = new token_1.Token('PLUS', '+');
+                return this.actual;
+            }
+            if (char === '-') {
+                this.actual = new token_1.Token('MINUS', '-');
+                return this.actual;
+            }
+            if (char === '*') {
+                this.actual = new token_1.Token('MULTIPLY', '*');
+                return this.actual;
+            }
+            if (char === '/') {
+                this.actual = new token_1.Token('DIVISION', '/');
+                return this.actual;
+            }
+            throw new Error("Unhandled character " + char + " at position " + (this.position - 1));
         }
-        if (number.length > 0) {
-            return new token_1.Token('INT', parseInt(number));
-        }
-        return token;
+        this.actual = new token_1.Token('EOF', null);
+        return this.actual;
     };
     return Tokenizer;
 }());

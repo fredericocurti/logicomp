@@ -1,4 +1,5 @@
 import { Token } from "./token";
+import { parse } from "querystring";
 
 export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
@@ -13,41 +14,54 @@ export class Tokenizer {
     /** Lê o próximo token e atualiza o atributo actual */    
     selectNext(): Token {
         let char = null
-        let token = new Token('EOF', null)
+        let nextChar = null
         let number = ''
-
+    
         while (this.position < this.origin.length) {
             char = this.origin[this.position]
-            if (!parseInt(char) && number.length > 0) {
-                return new Token('INT', parseInt(number))
-            }
-
+            nextChar = this.origin[this.position + 1]
             this.position++
 
-            if (char === ' ') {
-                if (number.length > 0) {
-                    return new Token('INT', parseInt(number))
-                }
-            } else if (char === '+') {
-                return new Token('PLUS', '+')
-            } else if (char === '-') {
-                return new Token('MINUS', '-')
-            } else if (char === '*') {
-                return new Token('MULTIPLY', '*')
-            } else if (char === '/') {
-                return new Token('DIVISION', '/')
-            } else if (parseInt(char)) {
-                number += char
+            // Skip whitespace or newline character
+            if (char === ' ' || char === '\n') {
                 continue
-            } else {
-                throw new Error(`Invalid character ${char} at position ${this.position - 1}`)
             }
+
+            // Stack number
+            if (char && char.match(/[0-9]/)) {
+                number += char
+                if (nextChar === undefined || !nextChar.match(/[0-9]/)) {
+                    this.actual = new Token('INT', parseInt(number))
+                    return this.actual
+                }
+                continue
+            }
+            
+            // Operators
+            if (char === '+') {
+                this.actual = new Token('PLUS', '+')
+                return this.actual
+            }
+
+            if (char === '-') {
+                this.actual = new Token('MINUS', '-')
+                return this.actual
+            }
+
+            if (char === '*') {
+                this.actual = new Token('MULTIPLY', '*')
+                return this.actual
+            }
+
+            if (char === '/') {
+                this.actual = new Token('DIVISION', '/')
+                return this.actual
+            }
+
+            throw new Error(`Unhandled character ${char} at position ${this.position - 1}`)            
         }
 
-        if (number.length > 0) {
-            return new Token('INT', parseInt(number))
-        }
-
-        return token
+        this.actual = new Token('EOF', null)
+        return this.actual
     }
 }

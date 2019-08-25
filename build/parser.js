@@ -12,45 +12,59 @@ var Parser = /** @class */ (function () {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
         return Parser.parseExpression();
     };
+    /** Consome os termos */
+    Parser.parseTerm = function () {
+        var op = null;
+        var result = 0;
+        Parser.tokens.selectNext();
+        while (Parser.tokens.actual
+            && (Parser.tokens.actual.type === 'MULTIPLY'
+                || Parser.tokens.actual.type === 'DIVISION'
+                || Parser.tokens.actual.type === 'INT')) {
+            var token = Parser.tokens.actual;
+            // console.log('Parse term', token)
+            switch (token.type) {
+                case 'MULTIPLY':
+                    op = token.value;
+                    // Parser.tokens.selectNext()
+                    break;
+                case 'DIVISION':
+                    op = token.value;
+                    // Parser.tokens.selectNext()
+                    break;
+                case 'INT':
+                    if (op === '*') {
+                        result *= token.value;
+                    }
+                    else if (op === '/') {
+                        result /= token.value;
+                    }
+                    else {
+                        result = token.value;
+                    }
+                    break;
+            }
+            Parser.tokens.selectNext();
+        }
+        return result;
+    };
     /** Consome os tokens to Tokenizer e analisa se a sintaxe está
      * aderente à gramática proposta.
      * Retorna o resultado da expressão analisada
      */
     Parser.parseExpression = function () {
-        var token = Parser.tokens.selectNext();
-        var result = 0;
+        var result = Parser.parseTerm();
         var op = '+';
-        while (token.type !== 'EOF') {
-            console.log(token);
+        while (Parser.tokens.actual && Parser.tokens.actual.type !== 'EOF') {
+            var token = Parser.tokens.actual;
             switch (token.type) {
-                case 'MULTIPLY':
-                    op = token.value;
-                    break;
-                case 'DIVISION':
-                    op = token.value;
-                    break;
                 case 'MINUS':
-                    op = token.value;
+                    result -= Parser.parseTerm();
                     break;
                 case 'PLUS':
-                    op = token.value;
-                    break;
-                case 'INT':
-                    if (op === '+') {
-                        result += token.value;
-                    }
-                    if (op === '-') {
-                        result -= token.value;
-                    }
-                    if (op === '*') {
-                        result *= token.value;
-                    }
-                    if (op === '/') {
-                        result /= token.value;
-                    }
+                    result += Parser.parseTerm();
                     break;
             }
-            token = Parser.tokens.selectNext();
         }
         return result;
     };
