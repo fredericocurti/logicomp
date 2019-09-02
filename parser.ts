@@ -1,42 +1,66 @@
 import { Tokenizer } from './tokenizer'
-import { Token } from './token';
 
 export class Parser {
     static tokens: Tokenizer
 
+    /** Consome operadores unários e parênteses */
+    static parseFactor = (): number => {
+        let token = Parser.tokens.actual
+        let result = 0
+
+        if (token.type === 'PLUS'
+            || token.type === 'MINUS'
+            || token.type === 'OPEN_PAR'
+            || token.type === 'INT'
+        ) {
+            if (token.type === 'INT') {
+                result = token.value as number
+                Parser.tokens.selectNext()
+            }
+
+            if (token.type === 'PLUS') {
+                Parser.tokens.selectNext()
+                return Parser.parseFactor()
+            }
+
+            if (token.type === 'MINUS') {
+                Parser.tokens.selectNext()
+                return -1 * Parser.parseFactor()
+            }
+
+            if (token.type === 'OPEN_PAR') {
+                Parser.tokens.selectNext()
+                result = Parser.parseExpression()
+                if (Parser.tokens.actual!.type === 'CLOSE_PAR') {
+                    Parser.tokens.selectNext()
+                } else {
+                    throw new Error('Expected CLOSE_PAR after OPEN_PAR')
+                }
+            }
+        } else {
+            throw new Error(`Invalid token ${Parser.tokens.actual} at parseFactor`)
+        }
+        
+        return result
+    }
+    
     /** Consome os termos */
     static parseTerm = (): number => {
-        let op = null
-        let result = 0
-        Parser.tokens.selectNext()
+        let result = Parser.parseFactor()
         
-        while (Parser.tokens.actual 
-            && (Parser.tokens.actual.type === 'MULTIPLY' 
-            || Parser.tokens.actual.type === 'DIVISION'
-            || Parser.tokens.actual.type === 'INT')
-        ) {
+        while (Parser.tokens.actual.type === 'MULTIPLY' 
+        || Parser.tokens.actual.type === 'DIVISION') {
             let token = Parser.tokens.actual
-            // console.log('Parse term', token)
-            switch(token.type) {
+            switch (token.type) {
                 case 'MULTIPLY':
-                    op = token.value as string
-                    // Parser.tokens.selectNext()
+                    Parser.tokens.selectNext()
+                    result *= Parser.parseFactor()
                     break
                 case 'DIVISION':
-                    op = token.value as string
-                    // Parser.tokens.selectNext()
-                    break
-                case 'INT':
-                    if (op === '*') {
-                        result *= token.value as number
-                    } else if (op === '/') {
-                        result /= token.value as number
-                    } else {
-                        result = token.value as number
-                    }
+                    Parser.tokens.selectNext()
+                    result /= Parser.parseFactor()
                     break
             }
-            Parser.tokens.selectNext()
         }
         return result
     }
@@ -47,14 +71,16 @@ export class Parser {
      */
     static parseExpression = ():number => {
         let result = Parser.parseTerm()
-        let op = '+'
-        while (Parser.tokens.actual && Parser.tokens.actual.type !== 'EOF') {
+        while (Parser.tokens.actual.type === 'PLUS' 
+        || Parser.tokens.actual.type === 'MINUS') {
             let token = Parser.tokens.actual
             switch (token.type) {
                 case 'MINUS':
+                    Parser.tokens.selectNext()
                     result -= Parser.parseTerm()
                     break
                 case 'PLUS':
+                    Parser.tokens.selectNext()
                     result += Parser.parseTerm()
                     break
             }
@@ -69,6 +95,10 @@ export class Parser {
      */
     static run(code: string) {
         Parser.tokens = new Tokenizer(code)
-        return Parser.parseExpression()
+        let res = Parser.parseExpression()
+        if (Parser.tokens.actual.type !== 'EOF') {
+            throw new Error('Finished chain without EOF token')
+        }
+        return res
     }
 }

@@ -5,7 +5,7 @@ var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
         this.origin = origin;
         this.position = 0;
-        this.actual = null;
+        this.actual = this.selectNext();
     }
     /** Lê o próximo token e atualiza o atributo actual */
     Tokenizer.prototype.selectNext = function () {
@@ -28,6 +28,15 @@ var Tokenizer = /** @class */ (function () {
                     return this.actual;
                 }
                 continue;
+            }
+            // Parenthesis
+            if (char === '(') {
+                this.actual = new token_1.Token('OPEN_PAR', '(');
+                return this.actual;
+            }
+            if (char === ')') {
+                this.actual = new token_1.Token('CLOSE_PAR', ')');
+                return this.actual;
             }
             // Operators
             if (char === '+') {

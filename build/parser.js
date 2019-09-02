@@ -10,41 +10,64 @@ var Parser = /** @class */ (function () {
      */
     Parser.run = function (code) {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
-        return Parser.parseExpression();
+        var res = Parser.parseExpression();
+        if (Parser.tokens.actual.type !== 'EOF') {
+            throw new Error('Finished chain without EOF token');
+        }
+        return res;
+    };
+    /** Consome operadores unários e parênteses */
+    Parser.parseFactor = function () {
+        var token = Parser.tokens.actual;
+        var result = 0;
+        if (token.type === 'PLUS'
+            || token.type === 'MINUS'
+            || token.type === 'OPEN_PAR'
+            || token.type === 'INT') {
+            if (token.type === 'INT') {
+                result = token.value;
+                Parser.tokens.selectNext();
+            }
+            if (token.type === 'PLUS') {
+                Parser.tokens.selectNext();
+                return Parser.parseFactor();
+            }
+            if (token.type === 'MINUS') {
+                Parser.tokens.selectNext();
+                return -1 * Parser.parseFactor();
+            }
+            if (token.type === 'OPEN_PAR') {
+                Parser.tokens.selectNext();
+                result = Parser.parseExpression();
+                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
+                    Parser.tokens.selectNext();
+                }
+                else {
+                    throw new Error('Expected CLOSE_PAR after OPEN_PAR');
+                }
+            }
+        }
+        else {
+            throw new Error("Invalid token " + Parser.tokens.actual + " at parseFactor");
+        }
+        return result;
     };
     /** Consome os termos */
     Parser.parseTerm = function () {
-        var op = null;
-        var result = 0;
-        Parser.tokens.selectNext();
-        while (Parser.tokens.actual
-            && (Parser.tokens.actual.type === 'MULTIPLY'
-                || Parser.tokens.actual.type === 'DIVISION'
-                || Parser.tokens.actual.type === 'INT')) {
+        var result = Parser.parseFactor();
+        while (Parser.tokens.actual.type === 'MULTIPLY'
+            || Parser.tokens.actual.type === 'DIVISION') {
             var token = Parser.tokens.actual;
-            // console.log('Parse term', token)
             switch (token.type) {
                 case 'MULTIPLY':
-                    op = token.value;
-                    // Parser.tokens.selectNext()
+                    Parser.tokens.selectNext();
+                    result *= Parser.parseFactor();
                     break;
                 case 'DIVISION':
-                    op = token.value;
-                    // Parser.tokens.selectNext()
-                    break;
-                case 'INT':
-                    if (op === '*') {
-                        result *= token.value;
-                    }
-                    else if (op === '/') {
-                        result /= token.value;
-                    }
-                    else {
-                        result = token.value;
-                    }
+                    Parser.tokens.selectNext();
+                    result /= Parser.parseFactor();
                     break;
             }
-            Parser.tokens.selectNext();
         }
         return result;
     };
@@ -54,14 +77,16 @@ var Parser = /** @class */ (function () {
      */
     Parser.parseExpression = function () {
         var result = Parser.parseTerm();
-        var op = '+';
-        while (Parser.tokens.actual && Parser.tokens.actual.type !== 'EOF') {
+        while (Parser.tokens.actual.type === 'PLUS'
+            || Parser.tokens.actual.type === 'MINUS') {
             var token = Parser.tokens.actual;
             switch (token.type) {
                 case 'MINUS':
+                    Parser.tokens.selectNext();
                     result -= Parser.parseTerm();
                     break;
                 case 'PLUS':
+                    Parser.tokens.selectNext();
                     result += Parser.parseTerm();
                     break;
             }

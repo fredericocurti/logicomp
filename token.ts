@@ -7,7 +7,7 @@ export class Token {
     }
 }
 
-type TokenType = TokenPlus | TokenMinus | TokenInt | TokenEOF | TokenMultiply | TokenDivision
+type TokenType = TokenPlus | TokenMinus | TokenInt | TokenEOF | TokenMultiply | TokenDivision | TokenClosePar | TokenOpenPar
 
 type TokenPlus = {
     type: 'PLUS'
@@ -37,4 +37,14 @@ type TokenMultiply = {
 type TokenDivision = {
     type: 'DIVISION'
     value: '/'
+}
+
+type TokenOpenPar = {
+    type: 'OPEN_PAR'
+    value: '('
+}
+
+type TokenClosePar = {
+    type: 'CLOSE_PAR'
+    value: ')'
 }

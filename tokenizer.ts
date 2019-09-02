@@ -1,14 +1,13 @@
 import { Token } from "./token";
-import { parse } from "querystring";
 
 export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
-    actual: Token | null; /** O último token separando */
+    actual: Token; /** O último token separando */
     constructor(origin: string) {
         this.origin = origin
         this.position = 0
-        this.actual = null
+        this.actual = this.selectNext()
     }
 
     /** Lê o próximo token e atualiza o atributo actual */    
@@ -35,6 +34,17 @@ export class Tokenizer {
                     return this.actual
                 }
                 continue
+            }
+
+            // Parenthesis
+            if (char === '(') {
+                this.actual = new Token('OPEN_PAR', '(')
+                return this.actual
+            }
+
+            if (char === ')') {
+                this.actual = new Token('CLOSE_PAR', ')')
+                return this.actual
             }
             
             // Operators
