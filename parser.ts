@@ -38,7 +38,7 @@ export class Parser {
                 }
             }
         } else {
-            throw new Error(`Invalid token ${Parser.tokens.actual} at parseFactor`)
+            throw new Error(`Invalid token ${Parser.tokens.actual.type} at parseFactor`)
         }
         
         return result
