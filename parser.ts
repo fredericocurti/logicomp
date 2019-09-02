@@ -20,11 +20,17 @@ export class Parser {
             switch(token.type) {
                 case 'MULTIPLY':
                     op = token.value as string
-                    // Parser.tokens.selectNext()
+                    token = Parser.tokens.selectNext()
+                    if (token.type === 'EOF') {
+                        throw new Error(`Unexpected EOF after * token`)
+                    }
                     break
                 case 'DIVISION':
                     op = token.value as string
-                    // Parser.tokens.selectNext()
+                    token = Parser.tokens.selectNext()
+                    if (token.type === 'EOF') {
+                        throw new Error(`Unexpected EOF after / token`)
+                    }
                     break
                 case 'INT':
                     if (op === '*') {
@@ -34,9 +40,10 @@ export class Parser {
                     } else {
                         result = token.value as number
                     }
+                    Parser.tokens.selectNext()
                     break
             }
-            Parser.tokens.selectNext()
+            
         }
         return result
     }

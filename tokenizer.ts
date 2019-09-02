@@ -9,6 +9,10 @@ export class Tokenizer {
         this.origin = origin
         this.position = 0
         this.actual = null
+
+        if (this.origin.split('').filter((c) => c !== '\n').length === 0) {
+            throw new Error(`Couldn't find any valid tokens with input: ${origin}`)
+        }
     }
 
     /** Lê o próximo token e atualiza o atributo actual */    

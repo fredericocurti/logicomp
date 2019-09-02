@@ -26,11 +26,17 @@ var Parser = /** @class */ (function () {
             switch (token.type) {
                 case 'MULTIPLY':
                     op = token.value;
-                    // Parser.tokens.selectNext()
+                    token = Parser.tokens.selectNext();
+                    if (token.type === 'EOF') {
+                        throw new Error("Unexpected EOF after * token");
+                    }
                     break;
                 case 'DIVISION':
                     op = token.value;
-                    // Parser.tokens.selectNext()
+                    token = Parser.tokens.selectNext();
+                    if (token.type === 'EOF') {
+                        throw new Error("Unexpected EOF after / token");
+                    }
                     break;
                 case 'INT':
                     if (op === '*') {
@@ -42,9 +48,9 @@ var Parser = /** @class */ (function () {
                     else {
                         result = token.value;
                     }
+                    Parser.tokens.selectNext();
                     break;
             }
-            Parser.tokens.selectNext();
         }
         return result;
     };

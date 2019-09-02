@@ -6,6 +6,9 @@ var Tokenizer = /** @class */ (function () {
         this.origin = origin;
         this.position = 0;
         this.actual = null;
+        if (this.origin.split('').filter(function (c) { return c !== '\n'; }).length === 0) {
+            throw new Error("Couldn't find any valid tokens with input: " + origin);
+        }
     }
     /** Lê o próximo token e atualiza o atributo actual */
     Tokenizer.prototype.selectNext = function () {
