@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tokenizer_1 = require("./tokenizer");
+var node_1 = require("./node");
 var Parser = /** @class */ (function () {
     function Parser() {
     }
     /** Recebe o código fonte como argumento, inicializa um objeto
-     * tokenizador e retorna o resultado do parseExpression().
+     * tokenizador e retorna o nó raiz de parseExpression().
      * Esse método será chamado pelo main()
      */
     Parser.run = function (code) {
@@ -18,29 +19,34 @@ var Parser = /** @class */ (function () {
     };
     /** Consome operadores unários e parênteses */
     Parser.parseFactor = function () {
+        var node;
         var token = Parser.tokens.actual;
-        var result = 0;
+        var result;
         if (token.type === 'PLUS'
             || token.type === 'MINUS'
             || token.type === 'OPEN_PAR'
             || token.type === 'INT') {
             if (token.type === 'INT') {
-                result = token.value;
+                node = new node_1.IntVal(token.value);
                 Parser.tokens.selectNext();
+                return node;
             }
             if (token.type === 'PLUS') {
                 Parser.tokens.selectNext();
-                return Parser.parseFactor();
+                node = new node_1.UnOp('+', [Parser.parseFactor()]);
+                return node;
             }
             if (token.type === 'MINUS') {
                 Parser.tokens.selectNext();
-                return -1 * Parser.parseFactor();
+                node = new node_1.UnOp('-', [Parser.parseFactor()]);
+                return node;
             }
             if (token.type === 'OPEN_PAR') {
                 Parser.tokens.selectNext();
                 result = Parser.parseExpression();
                 if (Parser.tokens.actual.type === 'CLOSE_PAR') {
                     Parser.tokens.selectNext();
+                    return result;
                 }
                 else {
                     throw new Error('Expected CLOSE_PAR after OPEN_PAR');
@@ -50,7 +56,7 @@ var Parser = /** @class */ (function () {
         else {
             throw new Error("Invalid token " + Parser.tokens.actual.type + " at parseFactor");
         }
-        return result;
+        return new node_1.NoOp();
     };
     /** Consome os termos */
     Parser.parseTerm = function () {
@@ -61,11 +67,13 @@ var Parser = /** @class */ (function () {
             switch (token.type) {
                 case 'MULTIPLY':
                     Parser.tokens.selectNext();
-                    result *= Parser.parseFactor();
+                    result = new node_1.BinOp('*', [result]);
+                    result.children.push(Parser.parseFactor());
                     break;
                 case 'DIVISION':
                     Parser.tokens.selectNext();
-                    result /= Parser.parseFactor();
+                    result = new node_1.BinOp('/', [result]);
+                    result.children.push(Parser.parseFactor());
                     break;
             }
         }
@@ -76,6 +84,7 @@ var Parser = /** @class */ (function () {
      * Retorna o resultado da expressão analisada
      */
     Parser.parseExpression = function () {
+        var node;
         var result = Parser.parseTerm();
         while (Parser.tokens.actual.type === 'PLUS'
             || Parser.tokens.actual.type === 'MINUS') {
@@ -83,11 +92,13 @@ var Parser = /** @class */ (function () {
             switch (token.type) {
                 case 'MINUS':
                     Parser.tokens.selectNext();
-                    result -= Parser.parseTerm();
+                    result = new node_1.BinOp('-', [result]);
+                    result.children.push(Parser.parseTerm());
                     break;
                 case 'PLUS':
                     Parser.tokens.selectNext();
-                    result += Parser.parseTerm();
+                    result = new node_1.BinOp('+', [result]);
+                    result.children.push(Parser.parseTerm());
                     break;
             }
         }

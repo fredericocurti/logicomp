@@ -7,7 +7,7 @@ if (input) {
     try {
         const filteredInput = Preprocessor.filter(input + '\n')
         const result = Parser.run(filteredInput)
-        console.log(result)
+        console.log(result.evaluate())
     } catch (error) {
         console.error(error.message)
     }
