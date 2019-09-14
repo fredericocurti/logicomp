@@ -120,10 +120,10 @@ export class Parser {
                     throw new Error('Expected SEMICOLON token after Expression')
                 }
             } else {
-                throw new Error('Expected ASSIGNMENT token after IDENTIFIER')
+                throw new Error(`Expected ASSIGNMENT token after IDENTIFIER ${token.value}`)
             }
         }
-        
+
         if (token.type === 'PRINT') {
             token = Parser.tokens.selectNext()
             if (token.type === 'OPEN_PAR') {
@@ -144,6 +144,12 @@ export class Parser {
             }
             return result
         }
+
+        // Unsure
+        if (token.type === 'SEMICOLON') {
+            token = Parser.tokens.selectNext()
+        }
+
         return result
     }
 

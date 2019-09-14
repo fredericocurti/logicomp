@@ -114,7 +114,7 @@ export class Tokenizer {
         }
 
         let token = getNext()
-        console.log(token)
+        // console.log(token)
         return token
     }
 }

@@ -128,7 +128,7 @@ var Parser = /** @class */ (function () {
                 }
             }
             else {
-                throw new Error('Expected ASSIGNMENT token after IDENTIFIER');
+                throw new Error("Expected ASSIGNMENT token after IDENTIFIER " + token.value);
             }
         }
         if (token.type === 'PRINT') {
@@ -153,6 +153,10 @@ var Parser = /** @class */ (function () {
                 throw new Error('Expected OPEN_PAR after PRINT');
             }
             return result;
+        }
+        // Unsure
+        if (token.type === 'SEMICOLON') {
+            token = Parser.tokens.selectNext();
         }
         return result;
     };

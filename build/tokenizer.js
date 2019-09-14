@@ -96,7 +96,7 @@ var Tokenizer = /** @class */ (function () {
             return _this.actual;
         };
         var token = getNext();
-        console.log(token);
+        // console.log(token)
         return token;
     };
     return Tokenizer;
