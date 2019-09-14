@@ -7,7 +7,21 @@ export class Token {
     }
 }
 
-type TokenType = TokenPlus | TokenMinus | TokenInt | TokenEOF | TokenMultiply | TokenDivision | TokenClosePar | TokenOpenPar
+export type TokenType = 
+    TokenPlus 
+    | TokenMinus 
+    | TokenInt 
+    | TokenEOF 
+    | TokenMultiply 
+    | TokenDivision 
+    | TokenClosePar 
+    | TokenOpenPar 
+    | TokenCloseBrackets 
+    | TokenOpenBrackets
+    | TokenSemicolon
+    | TokenIdentifier
+    | TokenAssignment
+    | TokenPrint
 
 type TokenPlus = {
     type: 'PLUS'
@@ -47,4 +61,34 @@ type TokenOpenPar = {
 type TokenClosePar = {
     type: 'CLOSE_PAR'
     value: ')'
+}
+
+type TokenOpenBrackets = {
+    type: 'OPEN_BRACKETS'
+    value: '{'
+}
+
+type TokenCloseBrackets = {
+    type: 'CLOSE_BRACKETS'
+    value: '}'
+}
+
+type TokenSemicolon = {
+    type: 'SEMICOLON'
+    value: ';'
+}
+
+type TokenIdentifier = {
+    type: 'IDENTIFIER'
+    value: string
+}
+
+type TokenAssignment = {
+    type: 'ASSIGNMENT'
+    value: '='
+}
+
+type TokenPrint = {
+    type: 'PRINT'
+    value: 'print'
 }

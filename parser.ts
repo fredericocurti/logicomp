@@ -1,5 +1,5 @@
 import { Tokenizer } from './tokenizer'
-import { IntVal, Node, UnOp, BinOp, NoOp } from './node';
+import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements } from './node';
 
 export class Parser {
     static tokens: Tokenizer
@@ -14,9 +14,16 @@ export class Parser {
             || token.type === 'MINUS'
             || token.type === 'OPEN_PAR'
             || token.type === 'INT'
+            || token.type === 'IDENTIFIER'
         ) {
             if (token.type === 'INT') {
                 node = new IntVal(token.value as number)
+                Parser.tokens.selectNext()
+                return node
+            }
+
+            if (token.type === 'IDENTIFIER') {
+                node = new Identifier(token.value as string)
                 Parser.tokens.selectNext()
                 return node
             }
@@ -97,13 +104,72 @@ export class Parser {
         return result
     }
 
+    static parseStatement = (): Node => {
+        let result = new NoOp()
+        let token = Parser.tokens.actual
+        if (token.type === 'IDENTIFIER') {
+            result = new Assignment([Parser.parseExpression()])
+            if (Parser.tokens.actual.type === 'ASSIGNMENT') {
+                Parser.tokens.selectNext()
+                result.children.push(Parser.parseExpression())
+                token = Parser.tokens.actual
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext()
+                    return result
+                } else {
+                    throw new Error('Expected SEMICOLON token after Expression')
+                }
+            } else {
+                throw new Error('Expected ASSIGNMENT token after IDENTIFIER')
+            }
+        }
+        
+        if (token.type === 'PRINT') {
+            token = Parser.tokens.selectNext()
+            if (token.type === 'OPEN_PAR') {
+                token = Parser.tokens.selectNext()
+                result = new Print([Parser.parseExpression()])
+                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
+                    token = Parser.tokens.selectNext()
+                    if (token.type === 'SEMICOLON') {
+                        Parser.tokens.selectNext()
+                    } else {
+                        throw new Error('Expected SEMICOLON token after PRINT')
+                    }
+                } else {
+                    throw new Error(`Expected CLOSE_PAR after PRINT, found ${token.type}`)
+                }
+            } else {
+                throw new Error('Expected OPEN_PAR after PRINT')
+            }
+            return result
+        }
+        return result
+    }
+
+    /** Parseia um bloco de código delimitado pelos tokens { e } */
+    static parseBlock = (): Node => {
+        if (Parser.tokens.actual.type === 'OPEN_BRACKETS') {
+            let result = new Statements()
+            let token = Parser.tokens.selectNext()
+            while (token.type !== 'CLOSE_BRACKETS') {
+                result.children.push(Parser.parseStatement())
+                token = Parser.tokens.actual
+            }
+            Parser.tokens.selectNext()
+            return result
+        } else {
+            throw new Error('Expected OPEN_BRACKETS at beggining of file')
+        }
+    }
+    
     /** Recebe o código fonte como argumento, inicializa um objeto
      * tokenizador e retorna o nó raiz de parseExpression().
      * Esse método será chamado pelo main()
      */
     static run(code: string) {
         Parser.tokens = new Tokenizer(code)
-        let res = Parser.parseExpression()
+        let res = Parser.parseBlock()
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token')
         }

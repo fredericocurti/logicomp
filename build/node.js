@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+var symboltable_1 = require("./symboltable");
 var Node = /** @class */ (function () {
     function Node() {
         this.children = [];
@@ -87,3 +88,60 @@ var NoOp = /** @class */ (function (_super) {
     return NoOp;
 }(Node));
 exports.NoOp = NoOp;
+var Identifier = /** @class */ (function (_super) {
+    __extends(Identifier, _super);
+    function Identifier(value) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            var value = symboltable_1.SymbolTable.get(_this.value);
+            if (value) {
+                return value;
+            }
+            throw new Error("Requested value for unitialized variable " + _this.value);
+        };
+        _this.value = value;
+        return _this;
+    }
+    return Identifier;
+}(Node));
+exports.Identifier = Identifier;
+var Print = /** @class */ (function (_super) {
+    __extends(Print, _super);
+    function Print(children) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            console.log(_this.children[0].evaluate());
+        };
+        _this.children = children;
+        return _this;
+    }
+    return Print;
+}(Node));
+exports.Print = Print;
+var Statements = /** @class */ (function (_super) {
+    __extends(Statements, _super);
+    function Statements() {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            _this.children.forEach(function (c) {
+                c.evaluate();
+            });
+        };
+        return _this;
+    }
+    return Statements;
+}(Node));
+exports.Statements = Statements;
+var Assignment = /** @class */ (function (_super) {
+    __extends(Assignment, _super);
+    function Assignment(children) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            symboltable_1.SymbolTable.set(_this.children[0].value, _this.children[1].evaluate());
+        };
+        _this.children = children;
+        return _this;
+    }
+    return Assignment;
+}(Node));
+exports.Assignment = Assignment;

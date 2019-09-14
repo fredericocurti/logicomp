@@ -11,7 +11,7 @@ var Parser = /** @class */ (function () {
      */
     Parser.run = function (code) {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
-        var res = Parser.parseExpression();
+        var res = Parser.parseBlock();
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token');
         }
@@ -25,9 +25,15 @@ var Parser = /** @class */ (function () {
         if (token.type === 'PLUS'
             || token.type === 'MINUS'
             || token.type === 'OPEN_PAR'
-            || token.type === 'INT') {
+            || token.type === 'INT'
+            || token.type === 'IDENTIFIER') {
             if (token.type === 'INT') {
                 node = new node_1.IntVal(token.value);
+                Parser.tokens.selectNext();
+                return node;
+            }
+            if (token.type === 'IDENTIFIER') {
+                node = new node_1.Identifier(token.value);
                 Parser.tokens.selectNext();
                 return node;
             }
@@ -103,6 +109,68 @@ var Parser = /** @class */ (function () {
             }
         }
         return result;
+    };
+    Parser.parseStatement = function () {
+        var result = new node_1.NoOp();
+        var token = Parser.tokens.actual;
+        if (token.type === 'IDENTIFIER') {
+            result = new node_1.Assignment([Parser.parseExpression()]);
+            if (Parser.tokens.actual.type === 'ASSIGNMENT') {
+                Parser.tokens.selectNext();
+                result.children.push(Parser.parseExpression());
+                token = Parser.tokens.actual;
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext();
+                    return result;
+                }
+                else {
+                    throw new Error('Expected SEMICOLON token after Expression');
+                }
+            }
+            else {
+                throw new Error('Expected ASSIGNMENT token after IDENTIFIER');
+            }
+        }
+        if (token.type === 'PRINT') {
+            token = Parser.tokens.selectNext();
+            if (token.type === 'OPEN_PAR') {
+                token = Parser.tokens.selectNext();
+                result = new node_1.Print([Parser.parseExpression()]);
+                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
+                    token = Parser.tokens.selectNext();
+                    if (token.type === 'SEMICOLON') {
+                        Parser.tokens.selectNext();
+                    }
+                    else {
+                        throw new Error('Expected SEMICOLON token after PRINT');
+                    }
+                }
+                else {
+                    throw new Error("Expected CLOSE_PAR after PRINT, found " + token.type);
+                }
+            }
+            else {
+                throw new Error('Expected OPEN_PAR after PRINT');
+            }
+            return result;
+        }
+        return result;
+    };
+    /** Parseia um bloco de código delimitado pelos tokens { e } */
+    Parser.parseBlock = function () {
+        if (Parser.tokens.actual.type === 'OPEN_BRACKETS') {
+            var result = new node_1.Statements();
+            var token = Parser.tokens.selectNext();
+            while (token.type !== 'CLOSE_BRACKETS') {
+                result.children.push(Parser.parseStatement());
+                token = Parser.tokens.actual;
+            }
+            Parser.tokens.selectNext();
+            return result;
+        }
+        else {
+            throw new Error('Expected OPEN_BRACKETS at beggining of file');
+        }
     };
     return Parser;
 }());

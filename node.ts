@@ -1,3 +1,5 @@
+import { SymbolTable } from "./symboltable"
+
 export class Node {
     value: any
     children: Node[]
@@ -57,5 +59,54 @@ export class NoOp extends Node {
     constructor() {
         super()
         this.children.length = 0
+    }
+}
+
+export class Identifier extends Node {
+    constructor(value: string) {
+        super()
+        this.value = value
+    }
+
+    evaluate = () => {
+        let value = SymbolTable.get(this.value)
+        if (value) {
+            return value
+        }
+        throw new Error(`Requested value for unitialized variable ${this.value}`)
+    }
+}
+
+export class Print extends Node {
+    constructor(children: Node[]) {
+        super()
+        this.children = children
+    }
+
+    evaluate = () => {
+        console.log(this.children[0].evaluate())
+    }
+}
+
+export class Statements extends Node {
+    constructor() {
+        super()
+    }
+
+    evaluate = () => {
+        this.children.forEach(c => {
+            c.evaluate()
+        })
+    }
+}
+
+export class Assignment extends Node {
+    constructor(children: Node[]) {
+        super()
+        this.children = children
+    }
+
+    evaluate = () => {
+        SymbolTable.set(this.children[0].value, this.children[1].evaluate())
     }
 }
