@@ -4,7 +4,7 @@ export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
-    reservedKeywords = ['print']
+    reservedKeywords = ['print', 'if', 'while', 'else']
 
     constructor(origin: string) {
         this.origin = origin
@@ -55,8 +55,24 @@ export class Tokenizer {
                     continue
                 }
 
+                if (char === '=' && nextChar === '=') {
+                    this.actual = new Token('COMPARISON', '==')
+                    this.position++
+                    return this.actual
+                }
+
                 if (char === '=') {
                     this.actual = new Token('ASSIGNMENT', '=')
+                    return this.actual
+                }
+
+                if (char === '>') {
+                    this.actual = new Token('COMPARISON', '>')
+                    return this.actual
+                }
+
+                if (char === '<') {
+                    this.actual = new Token('COMPARISON', '<')
                     return this.actual
                 }
 
@@ -114,7 +130,15 @@ export class Tokenizer {
         }
 
         let token = getNext()
-        // console.log(token)
         return token
+    }
+
+    /** For debugging */
+    parseAll() {
+        let token = this.selectNext()
+        while (token.type !== 'EOF') {
+            console.log(token)
+            token = this.selectNext()
+        }
     }
 }

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var token_1 = require("./token");
 var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
-        this.reservedKeywords = ['print'];
+        this.reservedKeywords = ['print', 'if', 'while', 'else'];
         this.origin = origin;
         this.position = 0;
         this.actual = this.selectNext();
@@ -48,8 +48,21 @@ var Tokenizer = /** @class */ (function () {
                     }
                     continue;
                 }
+                if (char === '=' && nextChar === '=') {
+                    _this.actual = new token_1.Token('COMPARISON', '==');
+                    _this.position++;
+                    return _this.actual;
+                }
                 if (char === '=') {
                     _this.actual = new token_1.Token('ASSIGNMENT', '=');
+                    return _this.actual;
+                }
+                if (char === '>') {
+                    _this.actual = new token_1.Token('COMPARISON', '>');
+                    return _this.actual;
+                }
+                if (char === '<') {
+                    _this.actual = new token_1.Token('COMPARISON', '<');
                     return _this.actual;
                 }
                 if (char === '{') {
@@ -96,8 +109,15 @@ var Tokenizer = /** @class */ (function () {
             return _this.actual;
         };
         var token = getNext();
-        // console.log(token)
         return token;
+    };
+    /** For debugging */
+    Tokenizer.prototype.parseAll = function () {
+        var token = this.selectNext();
+        while (token.type !== 'EOF') {
+            console.log(token);
+            token = this.selectNext();
+        }
     };
     return Tokenizer;
 }());

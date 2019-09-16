@@ -14,7 +14,7 @@ if (input) {
         var filteredInput = preprocessor_1.Preprocessor.filter(file);
         var result = parser_1.Parser.run(filteredInput);
         /** console.log(util.inspect(result,  {showHidden: false, depth: null})) */
-        result.evaluate();
+        // result.evaluate()
     }
     catch (error) {
         console.error(error.message);

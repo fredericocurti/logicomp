@@ -22,6 +22,13 @@ export type TokenType =
     | TokenIdentifier
     | TokenAssignment
     | TokenPrint
+    | TokenIf
+    | TokenElse
+    | TokenWhile
+    | TokenScan
+    | TokenComparison
+    | TokenAnd
+    | TokenOr
 
 type TokenPlus = {
     type: 'PLUS'
@@ -51,6 +58,16 @@ type TokenMultiply = {
 type TokenDivision = {
     type: 'DIVISION'
     value: '/'
+}
+
+type TokenAnd = {
+    type: 'AND'
+    value: '&&'
+}
+
+type TokenOr = {
+    type: 'OR'
+    value: '||'
 }
 
 type TokenOpenPar = {
@@ -91,4 +108,29 @@ type TokenAssignment = {
 type TokenPrint = {
     type: 'PRINT'
     value: 'print'
+}
+
+type TokenWhile = {
+    type: 'WHILE'
+    value: 'while'
+}
+
+type TokenIf = {
+    type: 'IF'
+    value: 'if'
+}
+
+type TokenElse = {
+    type: 'ELSE'
+    value: 'else'
+}
+
+type TokenScan = {
+    type: 'SCAN'
+    value: 'scan'
+}
+
+type TokenComparison = {
+    type: 'COMPARISON'
+    value: '==' | '>' | '<'
 }

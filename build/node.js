@@ -14,6 +14,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var symboltable_1 = require("./symboltable");
+var readlineSync = require('readline-sync');
 var Node = /** @class */ (function () {
     function Node() {
         this.children = [];
@@ -145,3 +146,56 @@ var Assignment = /** @class */ (function (_super) {
     return Assignment;
 }(Node));
 exports.Assignment = Assignment;
+var Scan = /** @class */ (function (_super) {
+    __extends(Scan, _super);
+    function Scan(children) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            var input = readlineSync.question("");
+            var number = parseInt(input);
+            if (number) {
+                return parseInt(input);
+            }
+            else {
+                throw new Error("scan() method expected number, received: " + input);
+            }
+        };
+        _this.children = children;
+        return _this;
+    }
+    return Scan;
+}(Node));
+exports.Scan = Scan;
+var If = /** @class */ (function (_super) {
+    __extends(If, _super);
+    function If(children) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            if (_this.children[0].evaluate() !== 0) {
+                _this.children[1].evaluate();
+            }
+            if (_this.children[0].evaluate() === 0 && _this.children[2]) {
+                _this.children[2].evaluate();
+            }
+        };
+        _this.children = children;
+        return _this;
+    }
+    return If;
+}(Node));
+exports.If = If;
+var While = /** @class */ (function (_super) {
+    __extends(While, _super);
+    function While(children) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            while (_this.children[0].evaluate()) {
+                _this.children[1].evaluate();
+            }
+        };
+        _this.children = children;
+        return _this;
+    }
+    return While;
+}(Node));
+exports.While = While;

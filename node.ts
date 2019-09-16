@@ -1,4 +1,5 @@
 import { SymbolTable } from "./symboltable"
+const readlineSync = require('readline-sync');
 
 export class Node {
     value: any
@@ -12,7 +13,7 @@ export class Node {
 }
 
 export class BinOp extends Node {
-    constructor(value: '+' | '-' | '*' | '/', children: Node[] = []) {
+    constructor(value: '+' | '-' | '*' | '/' | '&&' | '||', children: Node[] = []) {
         super()
         this.children = children
         this.value = value
@@ -108,5 +109,52 @@ export class Assignment extends Node {
 
     evaluate = () => {
         SymbolTable.set(this.children[0].value, this.children[1].evaluate())
+    }
+}
+
+export class Scan extends Node {
+    constructor(children: Node[]) {
+        super()
+        this.children = children
+    }
+
+    evaluate = () => {
+        let input = readlineSync.question("")
+        let number = parseInt(input)
+        if (number) {
+            return parseInt(input)
+        } else {
+            throw new Error(`scan() method expected number, received: ${input}`)
+        }
+    }
+}
+
+export class If extends Node {
+    constructor(children: (BinOp | UnOp)[] ) {
+        super()
+        this.children = children
+    }
+
+    evaluate = () => {
+        if (this.children[0].evaluate() !== 0) {
+            this.children[1].evaluate()
+        }
+
+        if (this.children[0].evaluate() === 0 && this.children[2]) {
+            this.children[2].evaluate()
+        }
+    }
+}
+
+export class While extends Node {
+    constructor(children: (BinOp | UnOp)[]) {
+        super()
+        this.children = children
+    }
+
+    evaluate = () => {
+        while (this.children[0].evaluate()) {
+            this.children[1].evaluate()
+        }
     }
 }

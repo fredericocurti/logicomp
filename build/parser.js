@@ -11,11 +11,12 @@ var Parser = /** @class */ (function () {
      */
     Parser.run = function (code) {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
-        var res = Parser.parseBlock();
-        if (Parser.tokens.actual.type !== 'EOF') {
-            throw new Error('Finished chain without EOF token');
-        }
-        return res;
+        Parser.tokens.parseAll();
+        // let res = Parser.parseBlock()
+        // if (Parser.tokens.actual.type !== 'EOF') {
+        //     throw new Error('Finished chain without EOF token')
+        // }
+        // return res
     };
     /** Consome operadores unários e parênteses */
     Parser.parseFactor = function () {

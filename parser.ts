@@ -175,10 +175,11 @@ export class Parser {
      */
     static run(code: string) {
         Parser.tokens = new Tokenizer(code)
-        let res = Parser.parseBlock()
-        if (Parser.tokens.actual.type !== 'EOF') {
-            throw new Error('Finished chain without EOF token')
-        }
-        return res
+        Parser.tokens.parseAll()
+        // let res = Parser.parseBlock()
+        // if (Parser.tokens.actual.type !== 'EOF') {
+        //     throw new Error('Finished chain without EOF token')
+        // }
+        // return res
     }
 }
