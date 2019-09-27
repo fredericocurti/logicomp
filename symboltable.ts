@@ -8,7 +8,7 @@ export class SymbolTable {
 
     static set(key: string, value: any) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = value
+        SymbolTable.symbolTable[key] = parseInt(value)
     }
 
 }

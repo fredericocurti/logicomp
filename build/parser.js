@@ -11,12 +11,14 @@ var Parser = /** @class */ (function () {
      */
     Parser.run = function (code) {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
-        Parser.tokens.parseAll();
-        // let res = Parser.parseBlock()
-        // if (Parser.tokens.actual.type !== 'EOF') {
-        //     throw new Error('Finished chain without EOF token')
-        // }
-        // return res
+        if (process.env.PARSE_ALL) {
+            Parser.tokens.parseAll();
+        }
+        var res = Parser.parseBlock();
+        if (Parser.tokens.actual.type !== 'EOF') {
+            throw new Error('Finished chain without EOF token');
+        }
+        return res;
     };
     /** Consome operadores unários e parênteses */
     Parser.parseFactor = function () {
@@ -27,7 +29,8 @@ var Parser = /** @class */ (function () {
             || token.type === 'MINUS'
             || token.type === 'OPEN_PAR'
             || token.type === 'INT'
-            || token.type === 'IDENTIFIER') {
+            || token.type === 'IDENTIFIER'
+            || token.type === 'SCAN') {
             if (token.type === 'INT') {
                 node = new node_1.IntVal(token.value);
                 Parser.tokens.selectNext();
@@ -37,6 +40,23 @@ var Parser = /** @class */ (function () {
                 node = new node_1.Identifier(token.value);
                 Parser.tokens.selectNext();
                 return node;
+            }
+            if (token.type === 'SCAN') {
+                token = Parser.tokens.selectNext();
+                if (token.type === 'OPEN_PAR') {
+                    token = Parser.tokens.selectNext();
+                    if (token.type === 'CLOSE_PAR') {
+                        token = Parser.tokens.selectNext();
+                        node = new node_1.Scan();
+                        return node;
+                    }
+                    else {
+                        throw new Error('Expected CLOSE_PAR after scan(');
+                    }
+                }
+                else {
+                    throw new Error('Expected OPEN_PAR after scan');
+                }
             }
             if (token.type === 'PLUS') {
                 Parser.tokens.selectNext();
@@ -69,7 +89,8 @@ var Parser = /** @class */ (function () {
     Parser.parseTerm = function () {
         var result = Parser.parseFactor();
         while (Parser.tokens.actual.type === 'MULTIPLY'
-            || Parser.tokens.actual.type === 'DIVISION') {
+            || Parser.tokens.actual.type === 'DIVISION'
+            || Parser.tokens.actual.type === 'AND') {
             var token = Parser.tokens.actual;
             switch (token.type) {
                 case 'MULTIPLY':
@@ -82,6 +103,11 @@ var Parser = /** @class */ (function () {
                     result = new node_1.BinOp('/', [result]);
                     result.children.push(Parser.parseFactor());
                     break;
+                case 'AND':
+                    Parser.tokens.selectNext();
+                    result = new node_1.BinOp('&&', [result]);
+                    result.children.push(Parser.parseTerm());
+                    break;
             }
         }
         return result;
@@ -91,10 +117,10 @@ var Parser = /** @class */ (function () {
      * Retorna o resultado da expressão analisada
      */
     Parser.parseExpression = function () {
-        var node;
         var result = Parser.parseTerm();
         while (Parser.tokens.actual.type === 'PLUS'
-            || Parser.tokens.actual.type === 'MINUS') {
+            || Parser.tokens.actual.type === 'MINUS'
+            || Parser.tokens.actual.type === 'OR') {
             var token = Parser.tokens.actual;
             switch (token.type) {
                 case 'MINUS':
@@ -107,14 +133,53 @@ var Parser = /** @class */ (function () {
                     result = new node_1.BinOp('+', [result]);
                     result.children.push(Parser.parseTerm());
                     break;
+                case 'OR':
+                    Parser.tokens.selectNext();
+                    result = new node_1.BinOp('||', [result]);
+                    result.children.push(Parser.parseTerm());
+                    break;
             }
+        }
+        return result;
+    };
+    Parser.parseRelExpression = function () {
+        var result = Parser.parseExpression();
+        var token = Parser.tokens.actual;
+        if (token.type === 'COMPARISON') {
+            result = new node_1.BinOp(token.value, [result]);
+            token = Parser.tokens.selectNext();
+            result.children.push(Parser.parseExpression());
         }
         return result;
     };
     Parser.parseStatement = function () {
         var result = new node_1.NoOp();
         var token = Parser.tokens.actual;
-        if (token.type === 'IDENTIFIER') {
+        if (token.type === 'IF') {
+            result = new node_1.If();
+            token = Parser.tokens.selectNext();
+            if (token.type === 'OPEN_PAR') {
+                Parser.tokens.selectNext();
+                result.children.push(Parser.parseRelExpression());
+                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
+                    token = Parser.tokens.selectNext();
+                    result.children.push(Parser.parseStatement());
+                    token = Parser.tokens.actual;
+                    if (token.type === 'ELSE') {
+                        result.children.push(Parser.parseStatement());
+                        token = Parser.tokens.selectNext();
+                    }
+                    return result;
+                }
+                else {
+                    throw new Error('Expected CLOSE_PAR after IF condition');
+                }
+            }
+            else {
+                throw new Error('Expected OPEN_PAR after IF');
+            }
+        }
+        else if (token.type === 'IDENTIFIER') {
             result = new node_1.Assignment([Parser.parseExpression()]);
             if (Parser.tokens.actual.type === 'ASSIGNMENT') {
                 Parser.tokens.selectNext();
@@ -132,7 +197,26 @@ var Parser = /** @class */ (function () {
                 throw new Error("Expected ASSIGNMENT token after IDENTIFIER " + token.value);
             }
         }
-        if (token.type === 'PRINT') {
+        else if (token.type === 'WHILE') {
+            token = Parser.tokens.selectNext();
+            result = new node_1.While();
+            if (token.type === 'OPEN_PAR') {
+                Parser.tokens.selectNext();
+                result.children.push(Parser.parseRelExpression());
+                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
+                    token = Parser.tokens.selectNext();
+                    result.children.push(Parser.parseStatement());
+                    return result;
+                }
+                else {
+                    throw new Error('Expected CLOSE_PAR after WHILE condition');
+                }
+            }
+            else {
+                throw new Error('Expected OPEN_PAR after WHILE');
+            }
+        }
+        else if (token.type === 'PRINT') {
             token = Parser.tokens.selectNext();
             if (token.type === 'OPEN_PAR') {
                 token = Parser.tokens.selectNext();
@@ -155,9 +239,12 @@ var Parser = /** @class */ (function () {
             }
             return result;
         }
-        // Unsure
-        if (token.type === 'SEMICOLON') {
+        else if (token.type === 'SEMICOLON') {
             token = Parser.tokens.selectNext();
+        }
+        else {
+            console.log('calling');
+            return Parser.parseBlock();
         }
         return result;
     };
@@ -174,7 +261,7 @@ var Parser = /** @class */ (function () {
             return result;
         }
         else {
-            throw new Error('Expected OPEN_BRACKETS at beggining of file');
+            throw new Error('Expected OPEN_BRACKETS at parseBlock');
         }
     };
     return Parser;

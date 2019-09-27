@@ -13,7 +13,7 @@ export class Node {
 }
 
 export class BinOp extends Node {
-    constructor(value: '+' | '-' | '*' | '/' | '&&' | '||', children: Node[] = []) {
+    constructor(value: '+' | '-' | '*' | '/' | '&&' | '||' | '==' | '>' | '<', children: Node[] = []) {
         super()
         this.children = children
         this.value = value
@@ -28,6 +28,12 @@ export class BinOp extends Node {
             return this.children[0].evaluate() * this.children[1].evaluate()
         } else if (this.value === '/') {
             return this.children[0].evaluate() / this.children[1].evaluate()
+        } else if (this.value === '==') {
+            return this.children[0].evaluate() === this.children[1].evaluate()
+        } else if (this.value === '>') {
+            return this.children[0].evaluate() > this.children[1].evaluate()
+        } else if (this.value === '<') {
+            return this.children[0].evaluate() < this.children[1].evaluate()
         } else {
             throw new Error('Invalid value on evaluate BinOp')
         }
@@ -71,7 +77,7 @@ export class Identifier extends Node {
 
     evaluate = () => {
         let value = SymbolTable.get(this.value)
-        if (value) {
+        if (typeof value === "number") {
             return value
         }
         throw new Error(`Requested value for unitialized variable ${this.value}`)
@@ -113,9 +119,8 @@ export class Assignment extends Node {
 }
 
 export class Scan extends Node {
-    constructor(children: Node[]) {
+    constructor() {
         super()
-        this.children = children
     }
 
     evaluate = () => {
@@ -130,26 +135,29 @@ export class Scan extends Node {
 }
 
 export class If extends Node {
-    constructor(children: (BinOp | UnOp)[] ) {
+    children: (BinOp | UnOp)[]
+    constructor() {
         super()
-        this.children = children
+        this.children = []
     }
 
     evaluate = () => {
-        if (this.children[0].evaluate() !== 0) {
+        if (this.children[0].evaluate()) {
             this.children[1].evaluate()
+            return
         }
 
-        if (this.children[0].evaluate() === 0 && this.children[2]) {
+        if (this.children[2]) {
             this.children[2].evaluate()
         }
     }
 }
 
 export class While extends Node {
-    constructor(children: (BinOp | UnOp)[]) {
+    children: (BinOp | UnOp)[]
+    constructor() {
         super()
-        this.children = children
+        this.children = []
     }
 
     evaluate = () => {

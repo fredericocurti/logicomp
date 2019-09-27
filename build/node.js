@@ -41,6 +41,15 @@ var BinOp = /** @class */ (function (_super) {
             else if (_this.value === '/') {
                 return _this.children[0].evaluate() / _this.children[1].evaluate();
             }
+            else if (_this.value === '==') {
+                return _this.children[0].evaluate() === _this.children[1].evaluate();
+            }
+            else if (_this.value === '>') {
+                return _this.children[0].evaluate() > _this.children[1].evaluate();
+            }
+            else if (_this.value === '<') {
+                return _this.children[0].evaluate() < _this.children[1].evaluate();
+            }
             else {
                 throw new Error('Invalid value on evaluate BinOp');
             }
@@ -95,7 +104,7 @@ var Identifier = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             var value = symboltable_1.SymbolTable.get(_this.value);
-            if (value) {
+            if (typeof value === "number") {
                 return value;
             }
             throw new Error("Requested value for unitialized variable " + _this.value);
@@ -148,7 +157,7 @@ var Assignment = /** @class */ (function (_super) {
 exports.Assignment = Assignment;
 var Scan = /** @class */ (function (_super) {
     __extends(Scan, _super);
-    function Scan(children) {
+    function Scan() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             var input = readlineSync.question("");
@@ -160,7 +169,6 @@ var Scan = /** @class */ (function (_super) {
                 throw new Error("scan() method expected number, received: " + input);
             }
         };
-        _this.children = children;
         return _this;
     }
     return Scan;
@@ -168,17 +176,18 @@ var Scan = /** @class */ (function (_super) {
 exports.Scan = Scan;
 var If = /** @class */ (function (_super) {
     __extends(If, _super);
-    function If(children) {
+    function If() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            if (_this.children[0].evaluate() !== 0) {
+            if (_this.children[0].evaluate()) {
                 _this.children[1].evaluate();
+                return;
             }
-            if (_this.children[0].evaluate() === 0 && _this.children[2]) {
+            if (_this.children[2]) {
                 _this.children[2].evaluate();
             }
         };
-        _this.children = children;
+        _this.children = [];
         return _this;
     }
     return If;
@@ -186,14 +195,14 @@ var If = /** @class */ (function (_super) {
 exports.If = If;
 var While = /** @class */ (function (_super) {
     __extends(While, _super);
-    function While(children) {
+    function While() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             while (_this.children[0].evaluate()) {
                 _this.children[1].evaluate();
             }
         };
-        _this.children = children;
+        _this.children = [];
         return _this;
     }
     return While;

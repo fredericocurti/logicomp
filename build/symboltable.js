@@ -9,7 +9,7 @@ var SymbolTable = /** @class */ (function () {
     };
     SymbolTable.set = function (key, value) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = value;
+        SymbolTable.symbolTable[key] = parseInt(value);
     };
     SymbolTable.symbolTable = {};
     return SymbolTable;

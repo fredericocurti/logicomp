@@ -4,7 +4,7 @@ export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
-    reservedKeywords = ['print', 'if', 'while', 'else']
+    reservedKeywords = ['print', 'if', 'while', 'else', 'scan']
 
     constructor(origin: string) {
         this.origin = origin
@@ -128,8 +128,13 @@ export class Tokenizer {
             this.actual = new Token('EOF', null)
             return this.actual
         }
-
+    
         let token = getNext()
+
+        if (process.env.DEBUG_TOKEN) {
+            console.log(token)
+        }
+
         return token
     }
 
@@ -137,7 +142,6 @@ export class Tokenizer {
     parseAll() {
         let token = this.selectNext()
         while (token.type !== 'EOF') {
-            console.log(token)
             token = this.selectNext()
         }
     }
