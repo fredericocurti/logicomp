@@ -34,6 +34,10 @@ export class BinOp extends Node {
             return this.children[0].evaluate() > this.children[1].evaluate()
         } else if (this.value === '<') {
             return this.children[0].evaluate() < this.children[1].evaluate()
+        } else if (this.value === '&&') {
+            return this.children[0].evaluate() && this.children[1].evaluate()
+        } else if (this.value === '||') {
+            return this.children[0].evaluate() || this.children[1].evaluate()
         } else {
             throw new Error('Invalid value on evaluate BinOp')
         }

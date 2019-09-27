@@ -50,6 +50,12 @@ var BinOp = /** @class */ (function (_super) {
             else if (_this.value === '<') {
                 return _this.children[0].evaluate() < _this.children[1].evaluate();
             }
+            else if (_this.value === '&&') {
+                return _this.children[0].evaluate() && _this.children[1].evaluate();
+            }
+            else if (_this.value === '||') {
+                return _this.children[0].evaluate() || _this.children[1].evaluate();
+            }
             else {
                 throw new Error('Invalid value on evaluate BinOp');
             }

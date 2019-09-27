@@ -166,8 +166,8 @@ var Parser = /** @class */ (function () {
                     result.children.push(Parser.parseStatement());
                     token = Parser.tokens.actual;
                     if (token.type === 'ELSE') {
-                        result.children.push(Parser.parseStatement());
                         token = Parser.tokens.selectNext();
+                        result.children.push(Parser.parseStatement());
                     }
                     return result;
                 }

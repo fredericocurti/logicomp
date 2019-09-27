@@ -61,6 +61,18 @@ export class Tokenizer {
                     return this.actual
                 }
 
+                if (char === '&' && nextChar === '&') {
+                    this.actual = new Token('AND', '&&')
+                    this.position++
+                    return this.actual
+                }
+
+                if (char === '|' && nextChar === '|') {
+                    this.actual = new Token('OR', '||')
+                    this.position++
+                    return this.actual
+                }
+
                 if (char === '=') {
                     this.actual = new Token('ASSIGNMENT', '=')
                     return this.actual

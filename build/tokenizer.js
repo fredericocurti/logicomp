@@ -53,6 +53,16 @@ var Tokenizer = /** @class */ (function () {
                     _this.position++;
                     return _this.actual;
                 }
+                if (char === '&' && nextChar === '&') {
+                    _this.actual = new token_1.Token('AND', '&&');
+                    _this.position++;
+                    return _this.actual;
+                }
+                if (char === '|' && nextChar === '|') {
+                    _this.actual = new token_1.Token('OR', '||');
+                    _this.position++;
+                    return _this.actual;
+                }
                 if (char === '=') {
                     _this.actual = new token_1.Token('ASSIGNMENT', '=');
                     return _this.actual;
