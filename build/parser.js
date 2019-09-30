@@ -243,7 +243,6 @@ var Parser = /** @class */ (function () {
             token = Parser.tokens.selectNext();
         }
         else {
-            console.log('calling');
             return Parser.parseBlock();
         }
         return result;

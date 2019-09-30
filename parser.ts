@@ -223,7 +223,6 @@ export class Parser {
         } else if (token.type === 'SEMICOLON') {
             token = Parser.tokens.selectNext()
         } else {
-            console.log('calling')
             return Parser.parseBlock()
         }
 

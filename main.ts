@@ -11,7 +11,7 @@ if (input) {
         const file = fs.readFileSync(path.join(__dirname, '..', input), { encoding: 'utf-8' })
         const filteredInput = Preprocessor.filter(file)
         const result = Parser.run(filteredInput)
-        console.log(util.inspect(result,  {showHidden: false, depth: null}))
+        // console.log(util.inspect(result,  {showHidden: false, depth: null}))
         result.evaluate()
     } catch (error) {
         console.error(error.message)
