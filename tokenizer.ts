@@ -4,7 +4,7 @@ export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
-    reservedKeywords = ['print', 'if', 'while', 'else', 'scan']
+    reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'main']
 
     constructor(origin: string) {
         this.origin = origin

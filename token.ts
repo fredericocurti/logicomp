@@ -29,6 +29,7 @@ export type TokenType =
     | TokenComparison
     | TokenAnd
     | TokenOr
+    | TokenMain
 
 type TokenPlus = {
     type: 'PLUS'
@@ -133,4 +134,9 @@ type TokenScan = {
 type TokenComparison = {
     type: 'COMPARISON'
     value: '==' | '>' | '<'
+}
+
+type TokenMain = {
+    type: 'MAIN'
+    value: 'main'
 }

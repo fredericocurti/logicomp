@@ -80,10 +80,12 @@ export class Identifier extends Node {
     }
 
     evaluate = () => {
-        let value = SymbolTable.get(this.value)
-        if (typeof value === "number") {
-            return value
+        let entry = SymbolTable.get(this.value)
+    
+        if (typeof entry.value === "number") {
+            return entry.value
         }
+
         throw new Error(`Requested value for unitialized variable ${this.value}`)
     }
 }
@@ -118,7 +120,26 @@ export class Assignment extends Node {
     }
 
     evaluate = () => {
-        SymbolTable.set(this.children[0].value, this.children[1].evaluate())
+        let entry = SymbolTable.get(this.children[0].value)
+        if (!entry) {
+            throw new Error(`Missing type declaration for variable ${this.children[0].value}`)
+        }
+
+        SymbolTable.setValue(this.children[0].value, this.children[1].evaluate())
+    }
+}
+
+export class Declaration extends Node {
+    type: 'int' | 'bool'
+
+    constructor(type: 'int' | 'bool') {
+        super()
+        this.children = []
+        this.type = type
+    }
+    
+    evaluate = () => {
+        SymbolTable.setType(this.children[0].value, this.type)
     }
 }
 

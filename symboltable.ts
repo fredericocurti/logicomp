@@ -6,9 +6,14 @@ export class SymbolTable {
         return SymbolTable.symbolTable[key]
     }
 
-    static set(key: string, value: any) {
+    static setValue(key: string, value: any) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = parseInt(value)
+        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], value: parseInt(value) }
+    }
+
+    static setType(key: string, type: 'bool' | 'int') {
+        // @ts-ignore
+        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], type: type }
     }
 
 }

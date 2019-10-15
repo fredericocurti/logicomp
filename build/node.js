@@ -109,9 +109,9 @@ var Identifier = /** @class */ (function (_super) {
     function Identifier(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var value = symboltable_1.SymbolTable.get(_this.value);
-            if (typeof value === "number") {
-                return value;
+            var entry = symboltable_1.SymbolTable.get(_this.value);
+            if (typeof entry.value === "number") {
+                return entry.value;
             }
             throw new Error("Requested value for unitialized variable " + _this.value);
         };
@@ -153,7 +153,11 @@ var Assignment = /** @class */ (function (_super) {
     function Assignment(children) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            symboltable_1.SymbolTable.set(_this.children[0].value, _this.children[1].evaluate());
+            var entry = symboltable_1.SymbolTable.get(_this.children[0].value);
+            if (!entry) {
+                throw new Error("Missing type declaration for variable " + _this.children[0].value);
+            }
+            symboltable_1.SymbolTable.setValue(_this.children[0].value, _this.children[1].evaluate());
         };
         _this.children = children;
         return _this;
@@ -161,6 +165,20 @@ var Assignment = /** @class */ (function (_super) {
     return Assignment;
 }(Node));
 exports.Assignment = Assignment;
+var Declaration = /** @class */ (function (_super) {
+    __extends(Declaration, _super);
+    function Declaration(type) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            symboltable_1.SymbolTable.setType(_this.children[0].value, _this.type);
+        };
+        _this.children = [];
+        _this.type = type;
+        return _this;
+    }
+    return Declaration;
+}(Node));
+exports.Declaration = Declaration;
 var Scan = /** @class */ (function (_super) {
     __extends(Scan, _super);
     function Scan() {

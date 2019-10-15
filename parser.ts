@@ -1,5 +1,5 @@
 import { Tokenizer } from './tokenizer'
-import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While } from './node';
+import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration } from './node';
 
 export class Parser {
     static tokens: Tokenizer
@@ -170,10 +170,10 @@ export class Parser {
                 throw new Error('Expected OPEN_PAR after IF')
             }
         } else if (token.type === 'IDENTIFIER') {
-            result = new Assignment([Parser.parseExpression()])
+            result = new Assignment([Parser.parseRelExpression()])
             if (Parser.tokens.actual.type === 'ASSIGNMENT') {
                 Parser.tokens.selectNext()
-                result.children.push(Parser.parseExpression())
+                result.children.push(Parser.parseRelExpression())
                 token = Parser.tokens.actual
                 if (token.type === 'SEMICOLON') {
                     Parser.tokens.selectNext()
@@ -220,6 +220,21 @@ export class Parser {
                 throw new Error('Expected OPEN_PAR after PRINT')
             }
             return result
+        } else if (token.type === 'INT') {
+            token = Parser.tokens.selectNext()
+            result = new Declaration('int')
+            if (token.type === 'IDENTIFIER') {
+                result.children.push(new Identifier(token.value as string))
+                token = Parser.tokens.selectNext()
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext()
+                    return result
+                }  else {
+                    throw new Error(`Expected SEMICOLON after IDENTIFIER, found ${token.type}`)    
+                }
+            } else {
+                throw new Error(`Expected IDENTIFIER after DECLARATION(INT), found ${token.type}`)
+            }
         } else if (token.type === 'SEMICOLON') {
             token = Parser.tokens.selectNext()
         } else {
@@ -244,6 +259,28 @@ export class Parser {
             throw new Error('Expected OPEN_BRACKETS at parseBlock')
         }
     }
+
+    static parseMain = (): Node => {
+        let token = Parser.tokens.actual
+        if (token.type !== 'INT') {
+            throw new Error(`Expected token INT at start of file, found ${token.type}`)
+        }
+        token = Parser.tokens.selectNext()
+        if (token.type !== 'MAIN') {
+            throw new Error(`Expected token MAIN at start of file, found ${token.type}`)
+        }
+        token = Parser.tokens.selectNext()
+        if (token.type !== 'OPEN_PAR') {
+            throw new Error(`Expected token OPEN_PAR after MAIN, found ${token.type}`)
+        }
+        token = Parser.tokens.selectNext()
+        if (token.type !== 'CLOSE_PAR') {
+            throw new Error(`Expected token CLOSE_PAR after OPEN_PAR after MAIN, found ${token.type}`)
+        }
+        token = Parser.tokens.selectNext()
+
+        return Parser.parseBlock()
+    }
     
     /** Recebe o código fonte como argumento, inicializa um objeto
      * tokenizador e retorna o nó raiz de parseExpression().
@@ -254,9 +291,10 @@ export class Parser {
 
         if (process.env.PARSE_ALL) {
             Parser.tokens.parseAll()
+            return new NoOp()
         }
         
-        let res = Parser.parseBlock()
+        let res = Parser.parseMain()
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token')
         }
