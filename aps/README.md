@@ -24,4 +24,4 @@ bin_op = (identifier|value) (+ | - | || | && | /)
 
 ## Análise de viabilidade LLVM
 
-
+a LLVM é uma biblioteca para produzir código intermediário ou de máquina (binário) independente da linguagem. Ela pode ser usada como um compilador, onde provida de um parser, e um lexer (front-end) e de um backend (instruction sets para diferentes arquiteturas de CPU), ela pode atuar como o compilador de uma linguagem própria. Porém, por ser uma ferramenta bastante versátil e complexa, possui várias peculiaridades e possui uma sintaxe bastante rígida. Ela pode atuar como um compilador para a minha linguagem porém é possível escrever o mesmo "na mão" sem ter o overhead de aprender as diversas ferramentas da LLVM e seu uso apropriado.
