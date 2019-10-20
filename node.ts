@@ -20,6 +20,10 @@ export class BinOp extends Node {
     }
 
     evaluate = () => {
+        if (typeof this.children[0].evaluate() !== 'number' || typeof this.children[1].evaluate() !== 'number') {
+            throw new Error(`BinOp evaluating value with type != number`)
+        }
+
         if (this.value === '+') {
             return this.children[0].evaluate() + this.children[1].evaluate()
         } else if (this.value === '-') {
@@ -41,7 +45,6 @@ export class BinOp extends Node {
         } else {
             throw new Error('Invalid value on evaluate BinOp')
         }
-
     }
 }
 
@@ -55,9 +58,22 @@ export class UnOp extends Node {
 }
 
 export class IntVal extends Node {
+    type = 'int'
     constructor(value: number) {
         super()
         this.children.length = 0
+        this.value = value
+    }
+
+    evaluate = () => {
+        return this.value
+    }
+}
+
+export class BoolVal extends Node {
+    type = 'bool'
+    constructor(value: boolean) {
+        super()
         this.value = value
     }
 
@@ -80,11 +96,25 @@ export class Identifier extends Node {
     }
 
     evaluate = () => {
-        let value = SymbolTable.get(this.value)
-        if (typeof value === "number") {
-            return value
+        let entry = SymbolTable.get(this.value)
+        
+        if (!entry) {
+            throw new Error(`Requested value for unitialized variable ${this.value}`)
         }
-        throw new Error(`Requested value for unitialized variable ${this.value}`)
+
+        if (entry.value) {
+            if (entry.type === 'int' && typeof entry.value !== 'number') {
+                throw new Error(`Variable ${this.value} of type ${entry.type} has value ${entry.value}`)
+            }
+
+            if (entry.type === 'bool' && typeof entry.value !== 'boolean') {
+                throw new Error(`Variable ${this.value} of type ${entry.type} has value ${entry.value}`)
+            }
+        } else {
+            throw new Error(`Requested value for unassigned variable ${this.value}`)
+        }
+        
+        return entry.value
     }
 }
 
@@ -118,7 +148,25 @@ export class Assignment extends Node {
     }
 
     evaluate = () => {
-        SymbolTable.set(this.children[0].value, this.children[1].evaluate())
+        let entry = SymbolTable.get(this.children[0].value)
+        if (!entry) {
+            throw new Error(`Missing type declaration for variable ${this.children[0].value}`)
+        }
+        SymbolTable.setValue(this.children[0].value, this.children[1].evaluate())
+    }
+}
+
+export class Declaration extends Node {
+    type: 'int' | 'bool'
+
+    constructor(type: 'int' | 'bool') {
+        super()
+        this.children = []
+        this.type = type
+    }
+    
+    evaluate = () => {
+        SymbolTable.setType(this.children[0].value, this.type)
     }
 }
 
@@ -146,6 +194,10 @@ export class If extends Node {
     }
 
     evaluate = () => {
+        if (typeof this.children[0].evaluate() !== 'boolean') {
+            throw new Error(`Expected boolean at IF statement, found ${this.children[0].evaluate()}`)
+        }
+
         if (this.children[0].evaluate()) {
             this.children[1].evaluate()
             return

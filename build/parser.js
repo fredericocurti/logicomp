@@ -13,8 +13,9 @@ var Parser = /** @class */ (function () {
         Parser.tokens = new tokenizer_1.Tokenizer(code);
         if (process.env.PARSE_ALL) {
             Parser.tokens.parseAll();
+            return new node_1.NoOp();
         }
-        var res = Parser.parseBlock();
+        var res = Parser.parseMain();
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token');
         }
@@ -30,9 +31,21 @@ var Parser = /** @class */ (function () {
             || token.type === 'OPEN_PAR'
             || token.type === 'INT'
             || token.type === 'IDENTIFIER'
-            || token.type === 'SCAN') {
+            || token.type === 'SCAN'
+            || token.type === 'TRUE'
+            || token.type === 'FALSE') {
             if (token.type === 'INT') {
                 node = new node_1.IntVal(token.value);
+                Parser.tokens.selectNext();
+                return node;
+            }
+            if (token.type === 'FALSE') {
+                node = new node_1.BoolVal(false);
+                Parser.tokens.selectNext();
+                return node;
+            }
+            if (token.type === 'TRUE') {
+                node = new node_1.BoolVal(true);
                 Parser.tokens.selectNext();
                 return node;
             }
@@ -180,10 +193,10 @@ var Parser = /** @class */ (function () {
             }
         }
         else if (token.type === 'IDENTIFIER') {
-            result = new node_1.Assignment([Parser.parseExpression()]);
+            result = new node_1.Assignment([Parser.parseRelExpression()]);
             if (Parser.tokens.actual.type === 'ASSIGNMENT') {
                 Parser.tokens.selectNext();
-                result.children.push(Parser.parseExpression());
+                result.children.push(Parser.parseRelExpression());
                 token = Parser.tokens.actual;
                 if (token.type === 'SEMICOLON') {
                     Parser.tokens.selectNext();
@@ -239,6 +252,42 @@ var Parser = /** @class */ (function () {
             }
             return result;
         }
+        else if (token.type === 'INT') {
+            token = Parser.tokens.selectNext();
+            result = new node_1.Declaration('int');
+            if (token.type === 'IDENTIFIER') {
+                result.children.push(new node_1.Identifier(token.value));
+                token = Parser.tokens.selectNext();
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext();
+                    return result;
+                }
+                else {
+                    throw new Error("Expected SEMICOLON after IDENTIFIER, found " + token.type);
+                }
+            }
+            else {
+                throw new Error("Expected IDENTIFIER after DECLARATION(INT), found " + token.type);
+            }
+        }
+        else if (token.type === 'BOOL') {
+            token = Parser.tokens.selectNext();
+            result = new node_1.Declaration('bool');
+            if (token.type === 'IDENTIFIER') {
+                result.children.push(new node_1.Identifier(token.value));
+                token = Parser.tokens.selectNext();
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext();
+                    return result;
+                }
+                else {
+                    throw new Error("Expected SEMICOLON after IDENTIFIER, found " + token.type);
+                }
+            }
+            else {
+                throw new Error("Expected IDENTIFIER after DECLARATION(BOOL), found " + token.type);
+            }
+        }
         else if (token.type === 'SEMICOLON') {
             token = Parser.tokens.selectNext();
         }
@@ -262,6 +311,26 @@ var Parser = /** @class */ (function () {
         else {
             throw new Error('Expected OPEN_BRACKETS at parseBlock');
         }
+    };
+    Parser.parseMain = function () {
+        var token = Parser.tokens.actual;
+        if (token.type !== 'INT') {
+            throw new Error("Expected token INT at start of file, found " + token.type);
+        }
+        token = Parser.tokens.selectNext();
+        if (token.type !== 'MAIN') {
+            throw new Error("Expected token MAIN at start of file, found " + token.type);
+        }
+        token = Parser.tokens.selectNext();
+        if (token.type !== 'OPEN_PAR') {
+            throw new Error("Expected token OPEN_PAR after MAIN, found " + token.type);
+        }
+        token = Parser.tokens.selectNext();
+        if (token.type !== 'CLOSE_PAR') {
+            throw new Error("Expected token CLOSE_PAR after OPEN_PAR after MAIN, found " + token.type);
+        }
+        token = Parser.tokens.selectNext();
+        return Parser.parseBlock();
     };
     return Parser;
 }());

@@ -29,6 +29,9 @@ var BinOp = /** @class */ (function (_super) {
         if (children === void 0) { children = []; }
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
+            if (typeof _this.children[0].evaluate() !== 'number' || typeof _this.children[1].evaluate() !== 'number') {
+                throw new Error("BinOp evaluating value with type != number");
+            }
             if (_this.value === '+') {
                 return _this.children[0].evaluate() + _this.children[1].evaluate();
             }
@@ -84,6 +87,7 @@ var IntVal = /** @class */ (function (_super) {
     __extends(IntVal, _super);
     function IntVal(value) {
         var _this = _super.call(this) || this;
+        _this.type = 'int';
         _this.evaluate = function () {
             return _this.value;
         };
@@ -94,6 +98,20 @@ var IntVal = /** @class */ (function (_super) {
     return IntVal;
 }(Node));
 exports.IntVal = IntVal;
+var BoolVal = /** @class */ (function (_super) {
+    __extends(BoolVal, _super);
+    function BoolVal(value) {
+        var _this = _super.call(this) || this;
+        _this.type = 'bool';
+        _this.evaluate = function () {
+            return _this.value;
+        };
+        _this.value = value;
+        return _this;
+    }
+    return BoolVal;
+}(Node));
+exports.BoolVal = BoolVal;
 var NoOp = /** @class */ (function (_super) {
     __extends(NoOp, _super);
     function NoOp() {
@@ -109,11 +127,22 @@ var Identifier = /** @class */ (function (_super) {
     function Identifier(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var value = symboltable_1.SymbolTable.get(_this.value);
-            if (typeof value === "number") {
-                return value;
+            var entry = symboltable_1.SymbolTable.get(_this.value);
+            if (!entry) {
+                throw new Error("Requested value for unitialized variable " + _this.value);
             }
-            throw new Error("Requested value for unitialized variable " + _this.value);
+            if (entry.value) {
+                if (entry.type === 'int' && typeof entry.value !== 'number') {
+                    throw new Error("Variable " + _this.value + " of type " + entry.type + " has value " + entry.value);
+                }
+                if (entry.type === 'bool' && typeof entry.value !== 'boolean') {
+                    throw new Error("Variable " + _this.value + " of type " + entry.type + " has value " + entry.value);
+                }
+            }
+            else {
+                throw new Error("Requested value for unassigned variable " + _this.value);
+            }
+            return entry.value;
         };
         _this.value = value;
         return _this;
@@ -153,7 +182,11 @@ var Assignment = /** @class */ (function (_super) {
     function Assignment(children) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            symboltable_1.SymbolTable.set(_this.children[0].value, _this.children[1].evaluate());
+            var entry = symboltable_1.SymbolTable.get(_this.children[0].value);
+            if (!entry) {
+                throw new Error("Missing type declaration for variable " + _this.children[0].value);
+            }
+            symboltable_1.SymbolTable.setValue(_this.children[0].value, _this.children[1].evaluate());
         };
         _this.children = children;
         return _this;
@@ -161,6 +194,20 @@ var Assignment = /** @class */ (function (_super) {
     return Assignment;
 }(Node));
 exports.Assignment = Assignment;
+var Declaration = /** @class */ (function (_super) {
+    __extends(Declaration, _super);
+    function Declaration(type) {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            symboltable_1.SymbolTable.setType(_this.children[0].value, _this.type);
+        };
+        _this.children = [];
+        _this.type = type;
+        return _this;
+    }
+    return Declaration;
+}(Node));
+exports.Declaration = Declaration;
 var Scan = /** @class */ (function (_super) {
     __extends(Scan, _super);
     function Scan() {
@@ -185,6 +232,9 @@ var If = /** @class */ (function (_super) {
     function If() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
+            if (typeof _this.children[0].evaluate() !== 'boolean') {
+                throw new Error("Expected boolean at IF statement, found " + _this.children[0].evaluate());
+            }
             if (_this.children[0].evaluate()) {
                 _this.children[1].evaluate();
                 return;

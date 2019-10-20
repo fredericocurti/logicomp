@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var token_1 = require("./token");
 var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
-        this.reservedKeywords = ['print', 'if', 'while', 'else', 'scan'];
+        this.reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'main', 'true', 'false'];
         this.origin = origin;
         this.position = 0;
         this.actual = this.selectNext();
