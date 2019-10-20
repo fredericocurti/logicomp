@@ -1,5 +1,5 @@
 import { Tokenizer } from './tokenizer'
-import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration } from './node';
+import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration, BoolVal } from './node';
 
 export class Parser {
     static tokens: Tokenizer
@@ -16,9 +16,23 @@ export class Parser {
             || token.type === 'INT'
             || token.type === 'IDENTIFIER'
             || token.type === 'SCAN'
+            || token.type === 'TRUE'
+            || token.type === 'FALSE'
         ) {
             if (token.type === 'INT') {
                 node = new IntVal(token.value as number)
+                Parser.tokens.selectNext()
+                return node
+            }
+
+            if (token.type === 'FALSE') {
+                node = new BoolVal(false)
+                Parser.tokens.selectNext()
+                return node
+            }
+
+            if (token.type === 'TRUE') {
+                node = new BoolVal(true)
                 Parser.tokens.selectNext()
                 return node
             }
@@ -234,6 +248,21 @@ export class Parser {
                 }
             } else {
                 throw new Error(`Expected IDENTIFIER after DECLARATION(INT), found ${token.type}`)
+            }
+        } else if (token.type === 'BOOL') {
+            token = Parser.tokens.selectNext()
+            result = new Declaration('bool')
+            if (token.type === 'IDENTIFIER') {
+                result.children.push(new Identifier(token.value as string))
+                token = Parser.tokens.selectNext()
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext()
+                    return result
+                }  else {
+                    throw new Error(`Expected SEMICOLON after IDENTIFIER, found ${token.type}`)    
+                }
+            } else {
+                throw new Error(`Expected IDENTIFIER after DECLARATION(BOOL), found ${token.type}`)
             }
         } else if (token.type === 'SEMICOLON') {
             token = Parser.tokens.selectNext()

@@ -30,6 +30,9 @@ export type TokenType =
     | TokenAnd
     | TokenOr
     | TokenMain
+    | TokenBool
+    | TokenTrue
+    | TokenFalse
 
 type TokenPlus = {
     type: 'PLUS'
@@ -44,6 +47,21 @@ type TokenMinus = {
 type TokenInt = {
     type: 'INT'
     value: number
+}
+
+type TokenBool = {
+    type: 'BOOL'
+    value: boolean
+}
+
+type TokenTrue = {
+    type: 'TRUE'
+    value: true
+}
+
+type TokenFalse = {
+    type: 'FALSE'
+    value: false
 }
 
 type TokenEOF = {

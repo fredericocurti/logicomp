@@ -20,7 +20,7 @@ var SymbolTable = /** @class */ (function () {
     };
     SymbolTable.setValue = function (key, value) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = __assign({}, SymbolTable.symbolTable[key], { value: parseInt(value) });
+        SymbolTable.symbolTable[key] = __assign({}, SymbolTable.symbolTable[key], { value: value });
     };
     SymbolTable.setType = function (key, type) {
         // @ts-ignore

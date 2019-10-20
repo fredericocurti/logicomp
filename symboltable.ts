@@ -8,7 +8,7 @@ export class SymbolTable {
 
     static setValue(key: string, value: any) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], value: parseInt(value) }
+        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], value: value }
     }
 
     static setType(key: string, type: 'bool' | 'int') {
