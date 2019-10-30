@@ -3,6 +3,7 @@ import { Preprocessor } from './preprocessor';
 import path from 'path'
 import util from 'util'
 import fs from 'fs'
+import { Assembler } from './assembler';
 
 const input = process.argv[2]
 
@@ -13,6 +14,7 @@ if (input) {
         const result = Parser.run(filteredInput)
         // console.log(util.inspect(result,  {showHidden: false, depth: null}))
         result.evaluate()
+        Assembler.flush()
     } catch (error) {
         console.error(error.message)
     }

@@ -26,6 +26,10 @@ var SymbolTable = /** @class */ (function () {
         // @ts-ignore
         SymbolTable.symbolTable[key] = __assign({}, SymbolTable.symbolTable[key], { type: type });
     };
+    SymbolTable.setOffset = function (key, offset) {
+        // @ts-ignore
+        SymbolTable.symbolTable[key] = __assign({}, SymbolTable.symbolTable[key], { offset: offset });
+    };
     SymbolTable.symbolTable = {};
     return SymbolTable;
 }());

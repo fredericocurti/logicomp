@@ -7,6 +7,7 @@ var parser_1 = require("./parser");
 var preprocessor_1 = require("./preprocessor");
 var path_1 = __importDefault(require("path"));
 var fs_1 = __importDefault(require("fs"));
+var assembler_1 = require("./assembler");
 var input = process.argv[2];
 if (input) {
     try {
@@ -15,6 +16,7 @@ if (input) {
         var result = parser_1.Parser.run(filteredInput);
         // console.log(util.inspect(result,  {showHidden: false, depth: null}))
         result.evaluate();
+        assembler_1.Assembler.flush();
     }
     catch (error) {
         console.error(error.message);

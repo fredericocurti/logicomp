@@ -14,12 +14,16 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var symboltable_1 = require("./symboltable");
+var assembler_1 = require("./assembler");
 var readlineSync = require('readline-sync');
 var Node = /** @class */ (function () {
     function Node() {
+        Node.idCounter++;
+        this.id = Node.idCounter;
         this.children = [];
         this.evaluate = function () { return new NoOp(); };
     }
+    Node.idCounter = 0;
     return Node;
 }());
 exports.Node = Node;
@@ -29,38 +33,91 @@ var BinOp = /** @class */ (function (_super) {
         if (children === void 0) { children = []; }
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            if (typeof _this.children[0].evaluate() !== 'number' || typeof _this.children[1].evaluate() !== 'number') {
-                throw new Error("BinOp evaluating value with type != number");
-            }
-            if (_this.value === '+') {
-                return _this.children[0].evaluate() + _this.children[1].evaluate();
-            }
-            else if (_this.value === '-') {
-                return _this.children[0].evaluate() - _this.children[1].evaluate();
-            }
-            else if (_this.value === '*') {
-                return _this.children[0].evaluate() * _this.children[1].evaluate();
-            }
-            else if (_this.value === '/') {
-                return _this.children[0].evaluate() / _this.children[1].evaluate();
-            }
-            else if (_this.value === '==') {
-                return _this.children[0].evaluate() === _this.children[1].evaluate();
-            }
-            else if (_this.value === '>') {
-                return _this.children[0].evaluate() > _this.children[1].evaluate();
-            }
-            else if (_this.value === '<') {
-                return _this.children[0].evaluate() < _this.children[1].evaluate();
-            }
-            else if (_this.value === '&&') {
-                return _this.children[0].evaluate() && _this.children[1].evaluate();
-            }
-            else if (_this.value === '||') {
-                return _this.children[0].evaluate() || _this.children[1].evaluate();
+            // if (typeof this.children[0].evaluate() !== 'number' || typeof this.children[1].evaluate() !== 'number') {
+            //     throw new Error(`BinOp evaluating value with type != number`)
+            // }
+            if (process.env.ASSEMBLE) {
+                var first = _this.children[0].evaluate();
+                assembler_1.Assembler.append("  PUSH EBX\n");
+                var second = _this.children[1].evaluate();
+                assembler_1.Assembler.append("  POP EAX\n");
+                if (_this.value === '+') {
+                    assembler_1.Assembler.append("  ADD EBX, EAX\n");
+                    return first + second;
+                }
+                else if (_this.value === '-') {
+                    assembler_1.Assembler.append("  SUB EAX, EBX\n");
+                    assembler_1.Assembler.append("  MOV EBX, EAX\n");
+                    return first - second;
+                }
+                else if (_this.value === '*') {
+                    assembler_1.Assembler.append("  IMUL EBX\n");
+                    assembler_1.Assembler.append("  MOV EBX, EAX\n");
+                    return first * second;
+                }
+                else if (_this.value === '/') {
+                    assembler_1.Assembler.append("  IDIV EBX\n");
+                    assembler_1.Assembler.append("  MOV EBX, EAX\n");
+                    return first / second;
+                }
+                else if (_this.value === '==') {
+                    assembler_1.Assembler.append("  CMP EAX, EBX\n");
+                    assembler_1.Assembler.append("  CALL binop_je\n");
+                    return first === second;
+                }
+                else if (_this.value === '>') {
+                    assembler_1.Assembler.append("  CMP EAX, EBX\n");
+                    assembler_1.Assembler.append("  CALL binop_jg\n");
+                    return first > second;
+                }
+                else if (_this.value === '<') {
+                    assembler_1.Assembler.append("  CMP EAX, EBX\n");
+                    assembler_1.Assembler.append("  CALL binop_jl\n");
+                    return first < second;
+                }
+                else if (_this.value === '&&') {
+                    assembler_1.Assembler.append("  AND EBX, EAX\n");
+                    return first && second;
+                }
+                else if (_this.value === '||') {
+                    assembler_1.Assembler.append("  OR EBX, EAX\n");
+                    return first || second;
+                }
+                else {
+                    throw new Error('Invalid value on evaluate BinOp');
+                }
             }
             else {
-                throw new Error('Invalid value on evaluate BinOp');
+                if (_this.value === '+') {
+                    return _this.children[0].evaluate() + _this.children[1].evaluate();
+                }
+                else if (_this.value === '-') {
+                    return _this.children[0].evaluate() - _this.children[1].evaluate();
+                }
+                else if (_this.value === '*') {
+                    return _this.children[0].evaluate() * _this.children[1].evaluate();
+                }
+                else if (_this.value === '/') {
+                    return _this.children[0].evaluate() / _this.children[1].evaluate();
+                }
+                else if (_this.value === '==') {
+                    return _this.children[0].evaluate() === _this.children[1].evaluate();
+                }
+                else if (_this.value === '>') {
+                    return _this.children[0].evaluate() > _this.children[1].evaluate();
+                }
+                else if (_this.value === '<') {
+                    return _this.children[0].evaluate() < _this.children[1].evaluate();
+                }
+                else if (_this.value === '&&') {
+                    return _this.children[0].evaluate() && _this.children[1].evaluate();
+                }
+                else if (_this.value === '||') {
+                    return _this.children[0].evaluate() || _this.children[1].evaluate();
+                }
+                else {
+                    throw new Error('Invalid value on evaluate BinOp');
+                }
             }
         };
         _this.children = children;
@@ -89,6 +146,7 @@ var IntVal = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.type = 'int';
         _this.evaluate = function () {
+            assembler_1.Assembler.append("  MOV EBX, " + _this.value + "\n");
             return _this.value;
         };
         _this.children.length = 0;
@@ -142,6 +200,7 @@ var Identifier = /** @class */ (function (_super) {
             else {
                 throw new Error("Requested value for unassigned variable " + _this.value);
             }
+            assembler_1.Assembler.append("  MOV EBX, [EBP-" + entry.offset + "]\n");
             return entry.value;
         };
         _this.value = value;
@@ -156,6 +215,9 @@ var Print = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             console.log(_this.children[0].evaluate());
+            assembler_1.Assembler.append("  PUSH EBX\n");
+            assembler_1.Assembler.append("  CALL print\n");
+            assembler_1.Assembler.append("  POP EBX\n");
         };
         _this.children = children;
         return _this;
@@ -187,6 +249,8 @@ var Assignment = /** @class */ (function (_super) {
                 throw new Error("Missing type declaration for variable " + _this.children[0].value);
             }
             symboltable_1.SymbolTable.setValue(_this.children[0].value, _this.children[1].evaluate());
+            // console.log(SymbolTable.symbolTable)
+            assembler_1.Assembler.append("  MOV [EBP-" + entry.offset + "], EBX\n");
         };
         _this.children = children;
         return _this;
@@ -200,11 +264,16 @@ var Declaration = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             symboltable_1.SymbolTable.setType(_this.children[0].value, _this.type);
+            symboltable_1.SymbolTable.setOffset(_this.children[0].value, _this.offset);
+            assembler_1.Assembler.append("  PUSH DWORD 0\n");
         };
         _this.children = [];
         _this.type = type;
+        _this.offset = Declaration.offsetCounter;
+        Declaration.offsetCounter += 4;
         return _this;
     }
+    Declaration.offsetCounter = 4;
     return Declaration;
 }(Node));
 exports.Declaration = Declaration;
@@ -232,15 +301,27 @@ var If = /** @class */ (function (_super) {
     function If() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            if (typeof _this.children[0].evaluate() !== 'boolean') {
+            var condition = _this.children[0].evaluate();
+            if (typeof condition !== 'boolean') {
                 throw new Error("Expected boolean at IF statement, found " + _this.children[0].evaluate());
             }
-            if (_this.children[0].evaluate()) {
+            if (process.env.ASSEMBLE) {
+                assembler_1.Assembler.append("  CMP EBX, False\n");
+                assembler_1.Assembler.append("  JE ELSE_" + _this.id + "\n");
                 _this.children[1].evaluate();
-                return;
-            }
-            if (_this.children[2]) {
+                assembler_1.Assembler.append("  JMP ENDIF_" + _this.id + "\n");
+                assembler_1.Assembler.append("  ELSE_" + _this.id + ":\n");
                 _this.children[2].evaluate();
+                assembler_1.Assembler.append("  ENDIF_" + _this.id + ":\n");
+            }
+            else {
+                if (condition) {
+                    _this.children[1].evaluate();
+                    return;
+                }
+                if (_this.children[2]) {
+                    _this.children[2].evaluate();
+                }
             }
         };
         _this.children = [];
@@ -254,8 +335,24 @@ var While = /** @class */ (function (_super) {
     function While() {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            while (_this.children[0].evaluate()) {
-                _this.children[1].evaluate();
+            if (process.env.ASSEMBLE) {
+                assembler_1.Assembler.append("\n  WHILE_" + _this.id + ":\n");
+                var condition = _this.children[0].evaluate();
+                if (typeof condition === 'boolean') {
+                    assembler_1.Assembler.append("  CMP EBX, False\n");
+                    assembler_1.Assembler.append("  JE EXIT_" + _this.id + "\n");
+                    _this.children[1].evaluate();
+                    assembler_1.Assembler.append("  JMP WHILE_" + _this.id + "\n");
+                    assembler_1.Assembler.append("  EXIT_" + _this.id + ":\n");
+                }
+                else {
+                    throw new Error("Expected boolean at WHILE");
+                }
+            }
+            else {
+                while (_this.children[0].evaluate()) {
+                    _this.children[1].evaluate();
+                }
             }
         };
         _this.children = [];

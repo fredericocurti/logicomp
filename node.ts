@@ -1,12 +1,17 @@
 import { SymbolTable } from "./symboltable"
+import { Assembler } from "./assembler";
 const readlineSync = require('readline-sync');
 
 export class Node {
+    static idCounter = 0
     value: any
     children: Node[]
     evaluate: () => any
+    id: number
 
     constructor() {
+        Node.idCounter++
+        this.id = Node.idCounter
         this.children = []
         this.evaluate = () => new NoOp()
     }
@@ -20,30 +25,74 @@ export class BinOp extends Node {
     }
 
     evaluate = () => {
-        if (typeof this.children[0].evaluate() !== 'number' || typeof this.children[1].evaluate() !== 'number') {
-            throw new Error(`BinOp evaluating value with type != number`)
-        }
+        // if (typeof this.children[0].evaluate() !== 'number' || typeof this.children[1].evaluate() !== 'number') {
+        //     throw new Error(`BinOp evaluating value with type != number`)
+        // }
 
-        if (this.value === '+') {
-            return this.children[0].evaluate() + this.children[1].evaluate()
-        } else if (this.value === '-') {
-            return this.children[0].evaluate() - this.children[1].evaluate()
-        } else if (this.value === '*') {
-            return this.children[0].evaluate() * this.children[1].evaluate()
-        } else if (this.value === '/') {
-            return this.children[0].evaluate() / this.children[1].evaluate()
-        } else if (this.value === '==') {
-            return this.children[0].evaluate() === this.children[1].evaluate()
-        } else if (this.value === '>') {
-            return this.children[0].evaluate() > this.children[1].evaluate()
-        } else if (this.value === '<') {
-            return this.children[0].evaluate() < this.children[1].evaluate()
-        } else if (this.value === '&&') {
-            return this.children[0].evaluate() && this.children[1].evaluate()
-        } else if (this.value === '||') {
-            return this.children[0].evaluate() || this.children[1].evaluate()
+        if (process.env.ASSEMBLE) {
+            let first = this.children[0].evaluate()
+            Assembler.append(`  PUSH EBX\n`);
+            let second = this.children[1].evaluate()
+            Assembler.append(`  POP EAX\n`);
+            if (this.value === '+') {
+                Assembler.append(`  ADD EBX, EAX\n`)
+                return first + second
+            } else if (this.value === '-') {
+                Assembler.append(`  SUB EAX, EBX\n`)
+                Assembler.append(`  MOV EBX, EAX\n`)
+                return first - second
+            } else if (this.value === '*') {
+                Assembler.append(`  IMUL EBX\n`)
+                Assembler.append(`  MOV EBX, EAX\n`)
+                return first * second
+            } else if (this.value === '/') {
+                Assembler.append(`  IDIV EBX\n`)
+                Assembler.append(`  MOV EBX, EAX\n`)
+                return first / second
+            } else if (this.value === '==') {
+                Assembler.append(`  CMP EAX, EBX\n`)
+                Assembler.append(`  CALL binop_je\n`)
+                return first === second
+            } else if (this.value === '>') {
+                Assembler.append(`  CMP EAX, EBX\n`)
+                Assembler.append(`  CALL binop_jg\n`)
+                return first > second
+            } else if (this.value === '<') {
+                Assembler.append(`  CMP EAX, EBX\n`)
+                Assembler.append(`  CALL binop_jl\n`)
+                return first < second
+            } else if (this.value === '&&') {
+                Assembler.append(`  AND EBX, EAX\n`)
+                return first && second
+            } else if (this.value === '||') {
+                Assembler.append(`  OR EBX, EAX\n`)
+                return first || second
+            } else {
+                throw new Error('Invalid value on evaluate BinOp')
+            }
+
         } else {
-            throw new Error('Invalid value on evaluate BinOp')
+            if (this.value === '+') {
+                return this.children[0].evaluate() + this.children[1].evaluate()
+            } else if (this.value === '-') {
+                return this.children[0].evaluate() - this.children[1].evaluate()
+            } else if (this.value === '*') {
+                return this.children[0].evaluate() * this.children[1].evaluate()
+            } else if (this.value === '/') {
+                return this.children[0].evaluate() / this.children[1].evaluate()
+            } else if (this.value === '==') {
+                return this.children[0].evaluate() === this.children[1].evaluate()
+            } else if (this.value === '>') {
+                return this.children[0].evaluate() > this.children[1].evaluate()
+            } else if (this.value === '<') {
+                return this.children[0].evaluate() < this.children[1].evaluate()
+            } else if (this.value === '&&') {
+                return this.children[0].evaluate() && this.children[1].evaluate()
+            } else if (this.value === '||') {
+                return this.children[0].evaluate() || this.children[1].evaluate()
+            } else {
+                throw new Error('Invalid value on evaluate BinOp')
+            }
         }
     }
 }
@@ -66,6 +115,7 @@ export class IntVal extends Node {
     }
 
     evaluate = () => {
+        Assembler.append(`  MOV EBX, ${this.value}\n`)
         return this.value
     }
 }
@@ -114,6 +164,7 @@ export class Identifier extends Node {
             throw new Error(`Requested value for unassigned variable ${this.value}`)
         }
         
+        Assembler.append(`  MOV EBX, [EBP-${entry.offset}]\n`)
         return entry.value
     }
 }
@@ -126,6 +177,9 @@ export class Print extends Node {
 
     evaluate = () => {
         console.log(this.children[0].evaluate())
+        Assembler.append(`  PUSH EBX\n`)
+        Assembler.append(`  CALL print\n`)
+        Assembler.append(`  POP EBX\n`)
     }
 }
 
@@ -153,20 +207,28 @@ export class Assignment extends Node {
             throw new Error(`Missing type declaration for variable ${this.children[0].value}`)
         }
         SymbolTable.setValue(this.children[0].value, this.children[1].evaluate())
+        // console.log(SymbolTable.symbolTable)
+        Assembler.append(`  MOV [EBP-${entry.offset}], EBX\n`)
     }
 }
 
 export class Declaration extends Node {
     type: 'int' | 'bool'
+    offset: number
+    static offsetCounter: number = 4
 
     constructor(type: 'int' | 'bool') {
         super()
         this.children = []
         this.type = type
+        this.offset = Declaration.offsetCounter
+        Declaration.offsetCounter += 4
     }
     
     evaluate = () => {
         SymbolTable.setType(this.children[0].value, this.type)
+        SymbolTable.setOffset(this.children[0].value, this.offset)
+        Assembler.append(`  PUSH DWORD 0\n`)
     }
 }
 
@@ -194,17 +256,28 @@ export class If extends Node {
     }
 
     evaluate = () => {
-        if (typeof this.children[0].evaluate() !== 'boolean') {
+        const condition = this.children[0].evaluate()
+        if (typeof condition !== 'boolean') {
             throw new Error(`Expected boolean at IF statement, found ${this.children[0].evaluate()}`)
         }
 
-        if (this.children[0].evaluate()) {
+        if (process.env.ASSEMBLE) {
+            Assembler.append(`  CMP EBX, False\n`)
+            Assembler.append(`  JE ELSE_${this.id}\n`)
             this.children[1].evaluate()
-            return
-        }
-
-        if (this.children[2]) {
+            Assembler.append(`  JMP ENDIF_${this.id}\n`)
+            Assembler.append(`  ELSE_${this.id}:\n`)
             this.children[2].evaluate()
+            Assembler.append(`  ENDIF_${this.id}:\n`)
+        } else {
+            if (condition) {
+                this.children[1].evaluate()
+                return
+            }
+
+            if (this.children[2]) {
+                this.children[2].evaluate()
+            }
         }
     }
 }
@@ -217,8 +290,23 @@ export class While extends Node {
     }
 
     evaluate = () => {
-        while (this.children[0].evaluate()) {
-            this.children[1].evaluate()
+        if (process.env.ASSEMBLE) {
+            Assembler.append(`\n  WHILE_${this.id}:\n`)
+            let condition = this.children[0].evaluate()
+            if (typeof condition === 'boolean') {
+                Assembler.append(`  CMP EBX, False\n`)
+                Assembler.append(`  JE EXIT_${this.id}\n`)
+                this.children[1].evaluate()
+                Assembler.append(`  JMP WHILE_${this.id}\n`)
+                Assembler.append(`  EXIT_${this.id}:\n`)
+            } else {
+                throw new Error(`Expected boolean at WHILE`)
+            }
+            
+        } else {
+            while (this.children[0].evaluate()) {
+                this.children[1].evaluate()
+            }
         }
     }
 }
