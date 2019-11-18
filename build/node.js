@@ -133,7 +133,6 @@ var Identifier = /** @class */ (function (_super) {
         _this.evaluate = function () {
             var entry = symbolTable.get(_this.value);
             if (!entry) {
-                console.log(symbolTable);
                 throw new Error("Requested value for unitialized variable " + _this.value);
             }
             if (entry.value) {
@@ -145,7 +144,6 @@ var Identifier = /** @class */ (function (_super) {
                 }
             }
             else {
-                console.log(symbolTable);
                 throw new Error("Requested value for unassigned variable " + _this.value);
             }
             return entry.value;
@@ -227,27 +225,40 @@ var FunctionDeclaration = /** @class */ (function (_super) {
     return FunctionDeclaration;
 }(Node));
 exports.FunctionDeclaration = FunctionDeclaration;
+/** The children in this node are the function arguments */
 var FunctionCall = /** @class */ (function (_super) {
     __extends(FunctionCall, _super);
     function FunctionCall(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var previousTable, newSymbolTable, variableDeclarations, statements;
+            var previousTable, newSymbolTable, parameters, statements;
+            var retval = null;
             var fnDeclaration = globalSymbolTable.get(_this.value).value;
             if (fnDeclaration) {
                 previousTable = symbolTable;
                 newSymbolTable = new symboltable_1.SymbolTable();
-                variableDeclarations = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1);
+                parameters = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1);
                 statements = fnDeclaration.children[fnDeclaration.children.length - 1];
                 /** pass arguments to function's scope symbol table */
                 _this.children.forEach(function (arg, index) {
-                    console.log('arg:', arg);
-                    newSymbolTable.setValue(variableDeclarations[index].children[0].value, _this.children[index].evaluate());
+                    newSymbolTable.setValue(parameters[index].children[0].value, _this.children[index].evaluate());
                 });
                 /** temporarily switch symbol tables */
                 symbolTable = newSymbolTable;
-                statements.evaluate();
+                /** Execute function  */
+                for (var i = 0; i < statements.children.length; i++) {
+                    var s = statements.children[i];
+                    if (s instanceof Return) { /** If return statement found, keep its value */
+                        retval = s.evaluate();
+                        break;
+                    }
+                    s.evaluate();
+                }
+                // statements.evaluate() // previous
                 symbolTable = previousTable;
+                if (retval) {
+                    return retval;
+                }
             }
             else {
                 throw new Error("Called undefined function " + _this.value);
@@ -259,6 +270,24 @@ var FunctionCall = /** @class */ (function (_super) {
     return FunctionCall;
 }(Node));
 exports.FunctionCall = FunctionCall;
+/** Children[0] is the return value */
+var Return = /** @class */ (function (_super) {
+    __extends(Return, _super);
+    function Return() {
+        var _this = _super.call(this) || this;
+        _this.evaluate = function () {
+            if (_this.children[0]) {
+                return _this.children[0].evaluate();
+            }
+            else {
+                throw new Error("Return has empty statement");
+            }
+        };
+        return _this;
+    }
+    return Return;
+}(Node));
+exports.Return = Return;
 var Scan = /** @class */ (function (_super) {
     __extends(Scan, _super);
     function Scan() {

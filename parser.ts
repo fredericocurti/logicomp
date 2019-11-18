@@ -1,5 +1,5 @@
 import { Tokenizer } from './tokenizer'
-import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration, BoolVal, FunctionDeclaration, print, FunctionCall } from './node';
+import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration, BoolVal, FunctionDeclaration, print, FunctionCall, Return } from './node';
 
 export class Parser {
     static tokens: Tokenizer
@@ -285,11 +285,12 @@ export class Parser {
                 throw new Error(`Expected IDENTIFIER after DECLARATION(BOOL), found ${token.type}`)
             }
         } else if (token.type === 'RETURN') {
+            result = new Return()
             token = Parser.tokens.selectNext()
             if (token.type === 'OPEN_PAR') {
                 token = Parser.tokens.selectNext()
 
-                result = Parser.parseRelExpression()
+                result.children.push(Parser.parseRelExpression())
                 token = Parser.tokens.actual
                 if (token.type !== 'CLOSE_PAR') {
                     throw new Error(`Expected CLOSE_PAR at end of RETURN, found ${token.type} ${token.value}`)
@@ -297,7 +298,7 @@ export class Parser {
                 token = Parser.tokens.selectNext()
                 if (token.type === 'SEMICOLON') {
                     Parser.tokens.selectNext()
-                }  else {
+                } else {
                     throw new Error(`Expected SEMICOLON after RETURN statement, found ${token.type}`)    
                 }
             } else {
@@ -407,7 +408,7 @@ export class Parser {
             throw new Error('Finished chain without EOF token')
         }
 
-        print(res)
+        // print(res)
 
         return res
     }

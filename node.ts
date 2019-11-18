@@ -106,7 +106,6 @@ export class Identifier extends Node {
         let entry = symbolTable.get(this.value)
         
         if (!entry) {
-            console.log(symbolTable)
             throw new Error(`Requested value for unitialized variable ${this.value}`)
         }
 
@@ -119,7 +118,6 @@ export class Identifier extends Node {
                 throw new Error(`Variable ${this.value} of type ${entry.type} has value ${entry.value}`)
             }
         } else {
-            console.log(symbolTable)
             throw new Error(`Requested value for unassigned variable ${this.value}`)
         }
         
@@ -190,6 +188,8 @@ export class FunctionDeclaration extends Node {
     }
 }
 
+
+/** The children in this node are the function arguments */
 export class FunctionCall extends Node {
     value: string
     constructor(value: string) {
@@ -198,26 +198,57 @@ export class FunctionCall extends Node {
     }
 
     evaluate = () => {
-        let previousTable, newSymbolTable: SymbolTable, variableDeclarations: any, statements
+        let previousTable, newSymbolTable: SymbolTable, parameters: any, statements
+        let retval = null
         let fnDeclaration: FunctionDeclaration = globalSymbolTable.get(this.value).value
         if (fnDeclaration) {
             previousTable = symbolTable
             newSymbolTable = new SymbolTable()
-            variableDeclarations = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1)
+
+            parameters = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1)
             statements = fnDeclaration.children[fnDeclaration.children.length - 1]
             
             /** pass arguments to function's scope symbol table */ 
             this.children.forEach((arg, index) => {
-                console.log('arg:', arg)
-                newSymbolTable.setValue(variableDeclarations[index].children[0].value, this.children[index].evaluate())
+                newSymbolTable.setValue(parameters[index].children[0].value, this.children[index].evaluate())
             })
 
             /** temporarily switch symbol tables */
             symbolTable = newSymbolTable
-            statements.evaluate()
+
+            /** Execute function  */
+            for (let i = 0; i < statements.children.length; i++) {
+                let s = statements.children[i]
+                if (s instanceof Return) { /** If return statement found, keep its value */
+                    retval = s.evaluate()
+                    break
+                }
+                s.evaluate()
+            }
+
+            // statements.evaluate() // previous
             symbolTable = previousTable
+
+            if (retval) {
+                return retval
+            }
         } else {
             throw new Error(`Called undefined function ${this.value}`)
+        }
+    }
+}
+
+/** Children[0] is the return value */
+export class Return extends Node {
+    constructor() {
+        super()
+    }
+
+    evaluate = () => {
+        if (this.children[0]) {
+            return this.children[0].evaluate()
+        } else {
+            throw new Error(`Return has empty statement`)
         }
     }
 }

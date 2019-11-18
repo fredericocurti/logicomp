@@ -20,7 +20,7 @@ var Parser = /** @class */ (function () {
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token');
         }
-        node_1.print(res);
+        // print(res)
         return res;
     };
     /** Consome operadores unários e parênteses */
@@ -307,10 +307,11 @@ var Parser = /** @class */ (function () {
             }
         }
         else if (token.type === 'RETURN') {
+            result = new node_1.Return();
             token = Parser.tokens.selectNext();
             if (token.type === 'OPEN_PAR') {
                 token = Parser.tokens.selectNext();
-                result = Parser.parseRelExpression();
+                result.children.push(Parser.parseRelExpression());
                 token = Parser.tokens.actual;
                 if (token.type !== 'CLOSE_PAR') {
                     throw new Error("Expected CLOSE_PAR at end of RETURN, found " + token.type + " " + token.value);
