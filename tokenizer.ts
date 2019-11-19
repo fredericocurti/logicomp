@@ -1,10 +1,10 @@
 import { Token, TokenType } from "./token";
 
-export class Tokenizer {
+export class    Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
-    reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'main', 'true', 'false']
+    reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'true', 'false', 'return']
 
     constructor(origin: string) {
         this.origin = origin
@@ -132,6 +132,11 @@ export class Tokenizer {
 
                 if (char === '/') {
                     this.actual = new Token('DIVISION', '/')
+                    return this.actual
+                }
+
+                if (char === ',') {
+                    this.actual = new Token('COMMA', ',')
                     return this.actual
                 }
 

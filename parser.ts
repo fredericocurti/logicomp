@@ -1,5 +1,5 @@
 import { Tokenizer } from './tokenizer'
-import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration, BoolVal } from './node';
+import { IntVal, Node, UnOp, BinOp, NoOp, Identifier, Assignment, Print, Statements, Scan, If, While, Declaration, BoolVal, FunctionDeclaration, print, FunctionCall, Return } from './node';
 
 export class Parser {
     static tokens: Tokenizer
@@ -39,7 +39,27 @@ export class Parser {
 
             if (token.type === 'IDENTIFIER') {
                 node = new Identifier(token.value as string)
-                Parser.tokens.selectNext()
+                token = Parser.tokens.selectNext()
+
+                /** Is a function call */ 
+                if (token.type === 'OPEN_PAR') {
+                    Parser.tokens.selectNext()
+                    node = new FunctionCall(node.value as string)
+                    while (Parser.tokens.actual.type !== 'CLOSE_PAR') {
+                        node.children.push(Parser.parseRelExpression())
+                    
+                        token = Parser.tokens.actual
+
+                        if (token.type !== 'COMMA' && token.type !== 'CLOSE_PAR') {
+                            throw new Error(`Expected COMMA between arguments, found ${token.type}`)
+                        }
+            
+                        if (token.type === 'COMMA') {
+                            token = Parser.tokens.selectNext()
+                        }
+                    }
+                    Parser.tokens.selectNext()
+                }
                 return node
             }
 
@@ -264,8 +284,26 @@ export class Parser {
             } else {
                 throw new Error(`Expected IDENTIFIER after DECLARATION(BOOL), found ${token.type}`)
             }
-        } else if (token.type === 'SEMICOLON') {
+        } else if (token.type === 'RETURN') {
             token = Parser.tokens.selectNext()
+            if (token.type === 'OPEN_PAR') {
+                token = Parser.tokens.selectNext()
+                result = new Return(Parser.parseRelExpression())
+                token = Parser.tokens.actual
+                if (token.type !== 'CLOSE_PAR') {
+                    throw new Error(`Expected CLOSE_PAR at end of RETURN, found ${token.type} ${token.value}`)
+                }
+                token = Parser.tokens.selectNext()
+                if (token.type === 'SEMICOLON') {
+                    Parser.tokens.selectNext()
+                } else {
+                    throw new Error(`Expected SEMICOLON after RETURN statement, found ${token.type}`)    
+                }
+            } else {
+                throw new Error(`Expected OPEN_PAR after RETURN, found ${token.type}`)
+            }
+        } else if (token.type === 'SEMICOLON') {
+            token = Parser.tokens.selectNext()    
         } else {
             return Parser.parseBlock()
         }
@@ -288,27 +326,66 @@ export class Parser {
             throw new Error('Expected OPEN_BRACKETS at parseBlock')
         }
     }
-
-    static parseMain = (): Node => {
+    
+    static parseFunction = (): Node | null => {
+        let fnDeclaration = new FunctionDeclaration()
         let token = Parser.tokens.actual
+
+        if (token.type === 'EOF') return null
+
         if (token.type !== 'INT') {
-            throw new Error(`Expected token INT at start of file, found ${token.type}`)
+            throw new Error(`Expected token INT at start of function declaration, found ${token.type}`)
         }
         token = Parser.tokens.selectNext()
-        if (token.type !== 'MAIN') {
-            throw new Error(`Expected token MAIN at start of file, found ${token.type}`)
+        fnDeclaration.children.push(new Identifier(token.value as string)) // function name
+        if (token.type !== 'IDENTIFIER') {
+            throw new Error(`Expected token IDENTIFIER as function declaration name, found ${token.type}`)
         }
+
         token = Parser.tokens.selectNext()
         if (token.type !== 'OPEN_PAR') {
-            throw new Error(`Expected token OPEN_PAR after MAIN, found ${token.type}`)
+            throw new Error(`Expected token OPEN_PAR before function parameters, found ${token.type}`)
         }
-        token = Parser.tokens.selectNext()
-        if (token.type !== 'CLOSE_PAR') {
-            throw new Error(`Expected token CLOSE_PAR after OPEN_PAR after MAIN, found ${token.type}`)
-        }
-        token = Parser.tokens.selectNext()
 
-        return Parser.parseBlock()
+        token = Parser.tokens.selectNext()
+        /** keep parsing function parameters, if any, before a CLOSE_PAR */
+        while (token.type !== 'CLOSE_PAR') {
+            let parameter = new Declaration(token.value as 'bool' | 'int')
+            token = Parser.tokens.selectNext()
+            if (token.type !== 'IDENTIFIER') {
+                throw new Error(`Expected IDENTIFIER after DECLARATION as function parameter, found ${token.type}`)
+            }
+
+            parameter.children.push(new Identifier(token.value as string))
+            token = Parser.tokens.selectNext()
+
+            if (token.type !== 'COMMA' && token.type !== 'CLOSE_PAR') {
+                throw new Error(`Expected COMMA between parameters, found ${token.type}`)
+            }
+
+            if (token.type === 'COMMA') {
+                token = Parser.tokens.selectNext()
+            }
+
+            fnDeclaration.children.push(parameter)
+        }
+
+        
+        Parser.tokens.selectNext() // consumes )
+        fnDeclaration.children.push(Parser.parseBlock())
+
+        return fnDeclaration
+    }
+
+    static parseProgram = (): Node => {
+        let program = new Statements()
+        let fn = Parser.parseFunction();
+        while (fn) {
+            program.children.push(fn)
+            fn = Parser.parseFunction();
+        }
+        program.children.push(new FunctionCall('main'))
+        return program
     }
     
     /** Recebe o código fonte como argumento, inicializa um objeto
@@ -323,10 +400,12 @@ export class Parser {
             return new NoOp()
         }
         
-        let res = Parser.parseMain()
+        let res = Parser.parseProgram()
+
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token')
         }
+
         return res
     }
 }

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var token_1 = require("./token");
 var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
-        this.reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'main', 'true', 'false'];
+        this.reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'true', 'false', 'return'];
         this.origin = origin;
         this.position = 0;
         this.actual = this.selectNext();
@@ -111,6 +111,10 @@ var Tokenizer = /** @class */ (function () {
                 }
                 if (char === '/') {
                     _this.actual = new token_1.Token('DIVISION', '/');
+                    return _this.actual;
+                }
+                if (char === ',') {
+                    _this.actual = new token_1.Token('COMMA', ',');
                     return _this.actual;
                 }
                 throw new Error("Unhandled character " + char + " at position " + (_this.position - 1));

@@ -33,6 +33,8 @@ export type TokenType =
     | TokenBool
     | TokenTrue
     | TokenFalse
+    | TokenComma
+    | TokenReturn
 
 type TokenPlus = {
     type: 'PLUS'
@@ -157,4 +159,14 @@ type TokenComparison = {
 type TokenMain = {
     type: 'MAIN'
     value: 'main'
+}
+
+type TokenComma = {
+    type: 'COMMA'
+    value: ','
+}
+
+type TokenReturn = {
+    type: 'RETURN'
+    value: 'return'
 }

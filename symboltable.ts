@@ -1,19 +1,24 @@
 export class SymbolTable {
-    static symbolTable: Object = {}
-
-    static get(key: string) {
-        // @ts-ignore
-        return SymbolTable.symbolTable[key]
+    symbolTable: Object
+    scope: string
+    constructor() {
+        this.symbolTable = {}
+        this.scope = 'GLOBAL'
     }
 
-    static setValue(key: string, value: any) {
+    get(key: string) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], value: value }
+        return this.symbolTable[key]
     }
 
-    static setType(key: string, type: 'bool' | 'int') {
+    setValue(key: string, value: any) {
         // @ts-ignore
-        SymbolTable.symbolTable[key] = {...SymbolTable.symbolTable[key], type: type }
+        this.symbolTable[key] = {...this.symbolTable[key], value: value }
     }
 
+    setType(key: string, type: 'bool' | 'int' | 'function') {
+        // @ts-ignore
+        this.symbolTable[key] = {...this.symbolTable[key], type: type }
+    }
+    
 }

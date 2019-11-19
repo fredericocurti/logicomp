@@ -1,14 +1,25 @@
 import { SymbolTable } from "./symboltable"
+import { stat } from "fs";
+
+const globalSymbolTable = new SymbolTable()
+let currentSymbolTable = globalSymbolTable
+const util = require('util')
 const readlineSync = require('readline-sync');
+
+export const print = (arg: any) => console.log(util.inspect(arg,  {showHidden: false, depth: null}, true, true))
 
 export class Node {
     value: any
     children: Node[]
     evaluate: () => any
+    id: number
+    static count: number = 0
 
     constructor() {
-        this.children = []
+        Node.count += 1
         this.evaluate = () => new NoOp()
+        this.children = []
+        this.id = Node.count
     }
 }
 
@@ -20,28 +31,30 @@ export class BinOp extends Node {
     }
 
     evaluate = () => {
-        if (typeof this.children[0].evaluate() !== 'number' || typeof this.children[1].evaluate() !== 'number') {
+        let first = this.children[0].evaluate()
+        let second = this.children[1].evaluate()
+        if (typeof first !== 'number' || typeof first !== 'number') {
             throw new Error(`BinOp evaluating value with type != number`)
         }
 
         if (this.value === '+') {
-            return this.children[0].evaluate() + this.children[1].evaluate()
+            return first + second
         } else if (this.value === '-') {
-            return this.children[0].evaluate() - this.children[1].evaluate()
+            return first - second
         } else if (this.value === '*') {
-            return this.children[0].evaluate() * this.children[1].evaluate()
+            return first * second
         } else if (this.value === '/') {
-            return this.children[0].evaluate() / this.children[1].evaluate()
+            return first / second
         } else if (this.value === '==') {
-            return this.children[0].evaluate() === this.children[1].evaluate()
+            return first === second
         } else if (this.value === '>') {
-            return this.children[0].evaluate() > this.children[1].evaluate()
+            return first > second
         } else if (this.value === '<') {
-            return this.children[0].evaluate() < this.children[1].evaluate()
+            return first < second
         } else if (this.value === '&&') {
-            return this.children[0].evaluate() && this.children[1].evaluate()
+            return first && second
         } else if (this.value === '||') {
-            return this.children[0].evaluate() || this.children[1].evaluate()
+            return first || second
         } else {
             throw new Error('Invalid value on evaluate BinOp')
         }
@@ -96,13 +109,13 @@ export class Identifier extends Node {
     }
 
     evaluate = () => {
-        let entry = SymbolTable.get(this.value)
+        let entry = currentSymbolTable.get(this.value)
         
         if (!entry) {
             throw new Error(`Requested value for unitialized variable ${this.value}`)
         }
 
-        if (entry.value) {
+        if (entry.value !== null && entry.value !== undefined) {
             if (entry.type === 'int' && typeof entry.value !== 'number') {
                 throw new Error(`Variable ${this.value} of type ${entry.type} has value ${entry.value}`)
             }
@@ -148,11 +161,11 @@ export class Assignment extends Node {
     }
 
     evaluate = () => {
-        let entry = SymbolTable.get(this.children[0].value)
+        let entry = currentSymbolTable.get(this.children[0].value)
         if (!entry) {
             throw new Error(`Missing type declaration for variable ${this.children[0].value}`)
         }
-        SymbolTable.setValue(this.children[0].value, this.children[1].evaluate())
+        currentSymbolTable.setValue(this.children[0].value, this.children[1].evaluate())
     }
 }
 
@@ -166,7 +179,94 @@ export class Declaration extends Node {
     }
     
     evaluate = () => {
-        SymbolTable.setType(this.children[0].value, this.type)
+        currentSymbolTable.setType(this.children[0].value, this.type)
+    }
+}
+
+export class FunctionDeclaration extends Node {
+    constructor() {
+        super()
+    }
+
+    evaluate = () => {
+        globalSymbolTable.setValue(this.children[0].value, this)
+        globalSymbolTable.setType(this.children[0].value, 'function')
+    }
+}
+
+/** The children in this node are the function arguments */
+export class FunctionCall extends Node {
+    value: string
+    symbolTable: SymbolTable
+    previousSymbolTable: SymbolTable
+    constructor(value: string) {
+        super()
+        this.value = value;
+        this.symbolTable = new SymbolTable()
+        this.previousSymbolTable = new SymbolTable()
+    }
+
+    evaluate = () => {
+        let parameters: any
+        let statements
+        let retval = null
+        let fnDeclaration: null | FunctionDeclaration = null
+        try {
+            fnDeclaration = globalSymbolTable.get(this.value).value
+        } catch (error) {
+            throw new Error(`Called undefined function ${this.value}`)
+        }
+
+        if (fnDeclaration) {
+            this.previousSymbolTable = currentSymbolTable
+            this.symbolTable.scope = fnDeclaration.children[0].value
+        
+            parameters = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1)
+            statements = fnDeclaration.children[fnDeclaration.children.length - 1]
+    
+            /** pass arguments to function's scope symbol table */ 
+            this.children.forEach((arg, index) => {
+                this.symbolTable.setValue(parameters[index].children[0].value, this.children[index].evaluate())
+            })
+
+            this.symbolTable.setValue(this.symbolTable.scope, null)
+            this.symbolTable.setType(this.symbolTable.scope, 'int')
+
+            /** temporarily switch symbol tables */
+            currentSymbolTable = this.symbolTable
+            
+            statements.evaluate()
+
+            retval = this.symbolTable.get(this.symbolTable.scope)
+
+            /** Revert ST */
+            currentSymbolTable = this.previousSymbolTable
+
+            if (retval) {
+                return retval.value
+            }
+
+        } else {
+            throw new Error(`Called undefined function ${this.value}`)
+        }
+    }
+}
+
+/** Children[0] is the return value */
+export class Return extends Node {
+    constructor(value: Node) {
+        super()
+        this.children[0] = value
+    }
+
+    evaluate = () => {
+        if (this.children[0]) {
+            currentSymbolTable.setValue(currentSymbolTable.scope, this.children[0].evaluate())
+            currentSymbolTable.setType(currentSymbolTable.scope, 'int')
+            return currentSymbolTable.get(currentSymbolTable.scope).value
+        } else {
+            throw new Error(`Return has empty statement`)
+        }
     }
 }
 
