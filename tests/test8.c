@@ -1,13 +1,16 @@
-int pow(int x, int factor) {
-    if (factor == 1) {
-        return(x);
+int factorial(int x) {
+    if (x == 0) {
+        return(1);
     } else {
-        return(x * pow(x, factor - 1));
+        return (x * factorial(x - 1));
     }
 }
 
 int main() {
     int b;
-    b = pow(2, 4);
+    int z;
+    z = 4;
+    b = factorial(5);
+    print(z);
     print(b);
 }

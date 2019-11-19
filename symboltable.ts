@@ -1,7 +1,9 @@
 export class SymbolTable {
-    symbolTable: Object;
+    symbolTable: Object
+    scope: string
     constructor() {
         this.symbolTable = {}
+        this.scope = 'GLOBAL'
     }
 
     get(key: string) {

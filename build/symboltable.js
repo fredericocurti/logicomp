@@ -14,6 +14,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var SymbolTable = /** @class */ (function () {
     function SymbolTable() {
         this.symbolTable = {};
+        this.scope = 'GLOBAL';
     }
     SymbolTable.prototype.get = function (key) {
         // @ts-ignore

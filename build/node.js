@@ -15,15 +15,18 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var symboltable_1 = require("./symboltable");
 var globalSymbolTable = new symboltable_1.SymbolTable();
-var symbolTable = globalSymbolTable;
+var currentSymbolTable = globalSymbolTable;
 var util = require('util');
 var readlineSync = require('readline-sync');
 exports.print = function (arg) { return console.log(util.inspect(arg, { showHidden: false, depth: null }, true, true)); };
 var Node = /** @class */ (function () {
     function Node() {
+        Node.count += 1;
         this.evaluate = function () { return new NoOp(); };
         this.children = [];
+        this.id = Node.count;
     }
+    Node.count = 0;
     return Node;
 }());
 exports.Node = Node;
@@ -33,35 +36,37 @@ var BinOp = /** @class */ (function (_super) {
         if (children === void 0) { children = []; }
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            if (typeof _this.children[0].evaluate() !== 'number' || typeof _this.children[1].evaluate() !== 'number') {
+            var first = _this.children[0].evaluate();
+            var second = _this.children[1].evaluate();
+            if (typeof first !== 'number' || typeof first !== 'number') {
                 throw new Error("BinOp evaluating value with type != number");
             }
             if (_this.value === '+') {
-                return _this.children[0].evaluate() + _this.children[1].evaluate();
+                return first + second;
             }
             else if (_this.value === '-') {
-                return _this.children[0].evaluate() - _this.children[1].evaluate();
+                return first - second;
             }
             else if (_this.value === '*') {
-                return _this.children[0].evaluate() * _this.children[1].evaluate();
+                return first * second;
             }
             else if (_this.value === '/') {
-                return _this.children[0].evaluate() / _this.children[1].evaluate();
+                return first / second;
             }
             else if (_this.value === '==') {
-                return _this.children[0].evaluate() === _this.children[1].evaluate();
+                return first === second;
             }
             else if (_this.value === '>') {
-                return _this.children[0].evaluate() > _this.children[1].evaluate();
+                return first > second;
             }
             else if (_this.value === '<') {
-                return _this.children[0].evaluate() < _this.children[1].evaluate();
+                return first < second;
             }
             else if (_this.value === '&&') {
-                return _this.children[0].evaluate() && _this.children[1].evaluate();
+                return first && second;
             }
             else if (_this.value === '||') {
-                return _this.children[0].evaluate() || _this.children[1].evaluate();
+                return first || second;
             }
             else {
                 throw new Error('Invalid value on evaluate BinOp');
@@ -131,11 +136,11 @@ var Identifier = /** @class */ (function (_super) {
     function Identifier(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var entry = symbolTable.get(_this.value);
+            var entry = currentSymbolTable.get(_this.value);
             if (!entry) {
                 throw new Error("Requested value for unitialized variable " + _this.value);
             }
-            if (entry.value) {
+            if (entry.value !== null && entry.value !== undefined) {
                 if (entry.type === 'int' && typeof entry.value !== 'number') {
                     throw new Error("Variable " + _this.value + " of type " + entry.type + " has value " + entry.value);
                 }
@@ -186,11 +191,11 @@ var Assignment = /** @class */ (function (_super) {
     function Assignment(children) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var entry = symbolTable.get(_this.children[0].value);
+            var entry = currentSymbolTable.get(_this.children[0].value);
             if (!entry) {
                 throw new Error("Missing type declaration for variable " + _this.children[0].value);
             }
-            symbolTable.setValue(_this.children[0].value, _this.children[1].evaluate());
+            currentSymbolTable.setValue(_this.children[0].value, _this.children[1].evaluate());
         };
         _this.children = children;
         return _this;
@@ -203,7 +208,7 @@ var Declaration = /** @class */ (function (_super) {
     function Declaration(type) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            symbolTable.setType(_this.children[0].value, _this.type);
+            currentSymbolTable.setType(_this.children[0].value, _this.type);
         };
         _this.children = [];
         _this.type = type;
@@ -231,33 +236,35 @@ var FunctionCall = /** @class */ (function (_super) {
     function FunctionCall(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
-            var previousTable, newSymbolTable, parameters, statements;
+            var parameters;
+            var statements;
             var retval = null;
-            var fnDeclaration = globalSymbolTable.get(_this.value).value;
+            var fnDeclaration = null;
+            try {
+                fnDeclaration = globalSymbolTable.get(_this.value).value;
+            }
+            catch (error) {
+                throw new Error("Called undefined function " + _this.value);
+            }
             if (fnDeclaration) {
-                previousTable = symbolTable;
-                newSymbolTable = new symboltable_1.SymbolTable();
+                _this.previousSymbolTable = currentSymbolTable;
+                _this.symbolTable.scope = fnDeclaration.children[0].value;
                 parameters = fnDeclaration.children.slice(1, fnDeclaration.children.length - 1);
                 statements = fnDeclaration.children[fnDeclaration.children.length - 1];
                 /** pass arguments to function's scope symbol table */
                 _this.children.forEach(function (arg, index) {
-                    newSymbolTable.setValue(parameters[index].children[0].value, _this.children[index].evaluate());
+                    _this.symbolTable.setValue(parameters[index].children[0].value, _this.children[index].evaluate());
                 });
+                _this.symbolTable.setValue(_this.symbolTable.scope, null);
+                _this.symbolTable.setType(_this.symbolTable.scope, 'int');
                 /** temporarily switch symbol tables */
-                symbolTable = newSymbolTable;
-                /** Execute function  */
-                for (var i = 0; i < statements.children.length; i++) {
-                    var s = statements.children[i];
-                    if (s instanceof Return) { /** If return statement found, keep its value */
-                        retval = s.evaluate();
-                        break;
-                    }
-                    s.evaluate();
-                }
-                // statements.evaluate() // previous
-                symbolTable = previousTable;
+                currentSymbolTable = _this.symbolTable;
+                statements.evaluate();
+                retval = _this.symbolTable.get(_this.symbolTable.scope);
+                /** Revert ST */
+                currentSymbolTable = _this.previousSymbolTable;
                 if (retval) {
-                    return retval;
+                    return retval.value;
                 }
             }
             else {
@@ -265,6 +272,8 @@ var FunctionCall = /** @class */ (function (_super) {
             }
         };
         _this.value = value;
+        _this.symbolTable = new symboltable_1.SymbolTable();
+        _this.previousSymbolTable = new symboltable_1.SymbolTable();
         return _this;
     }
     return FunctionCall;
@@ -273,16 +282,19 @@ exports.FunctionCall = FunctionCall;
 /** Children[0] is the return value */
 var Return = /** @class */ (function (_super) {
     __extends(Return, _super);
-    function Return() {
+    function Return(value) {
         var _this = _super.call(this) || this;
         _this.evaluate = function () {
             if (_this.children[0]) {
-                return _this.children[0].evaluate();
+                currentSymbolTable.setValue(currentSymbolTable.scope, _this.children[0].evaluate());
+                currentSymbolTable.setType(currentSymbolTable.scope, 'int');
+                return currentSymbolTable.get(currentSymbolTable.scope).value;
             }
             else {
                 throw new Error("Return has empty statement");
             }
         };
+        _this.children[0] = value;
         return _this;
     }
     return Return;

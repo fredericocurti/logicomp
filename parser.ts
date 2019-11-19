@@ -285,12 +285,10 @@ export class Parser {
                 throw new Error(`Expected IDENTIFIER after DECLARATION(BOOL), found ${token.type}`)
             }
         } else if (token.type === 'RETURN') {
-            result = new Return()
             token = Parser.tokens.selectNext()
             if (token.type === 'OPEN_PAR') {
                 token = Parser.tokens.selectNext()
-
-                result.children.push(Parser.parseRelExpression())
+                result = new Return(Parser.parseRelExpression())
                 token = Parser.tokens.actual
                 if (token.type !== 'CLOSE_PAR') {
                     throw new Error(`Expected CLOSE_PAR at end of RETURN, found ${token.type} ${token.value}`)
@@ -403,12 +401,10 @@ export class Parser {
         }
         
         let res = Parser.parseProgram()
-        // print(res)
+
         if (Parser.tokens.actual.type !== 'EOF') {
             throw new Error('Finished chain without EOF token')
         }
-
-        // print(res)
 
         return res
     }
