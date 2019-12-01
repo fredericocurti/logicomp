@@ -1,0 +1,11 @@
+! sum \I a, I b/ -> I [
+    print(a + b);
+    -> a + b;
+]
+
+! main \/ -> I [
+    I c;
+    c <- 2;
+    sum(2, 2);
+    -> c;
+]

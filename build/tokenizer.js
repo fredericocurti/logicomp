@@ -3,7 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var token_1 = require("./token");
 var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
-        this.reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'true', 'false', 'return'];
+        this.line = 0;
+        this.reservedKeywords = ['print', 'if', 'else', 'scan', 'I', 'B', 'true', 'false'];
+        this.types = {
+            I: 'INT',
+            B: 'BOOl'
+        };
         this.origin = origin;
         this.position = 0;
         this.actual = this.selectNext();
@@ -20,6 +25,9 @@ var Tokenizer = /** @class */ (function () {
                 char = _this.origin[_this.position];
                 nextChar = _this.origin[_this.position + 1];
                 _this.position++;
+                if (char === '\n') {
+                    _this.line++;
+                }
                 // Skip whitespace or newline character
                 if (char === ' ' || char === '\n') {
                     continue;
@@ -33,13 +41,25 @@ var Tokenizer = /** @class */ (function () {
                     }
                     continue;
                 }
+                if (char === '-' && nextChar === '>') {
+                    _this.actual = new token_1.Token('RETURN', '->');
+                    _this.position++;
+                    return _this.actual;
+                }
                 // Stack identifier
                 if (char && char.match(/[a-z0-9]/i)) {
                     str += char;
                     if (nextChar === undefined || !nextChar.match(/[a-z0-9]/i)) {
                         // @ts-ignore
                         if (_this.reservedKeywords.includes(str)) {
-                            _this.actual = new token_1.Token(str.toUpperCase(), str);
+                            // @ts-ignore
+                            if (_this.types[str]) {
+                                // @ts-ignore
+                                _this.actual = new token_1.Token(_this.types[str], str);
+                            }
+                            else {
+                                _this.actual = new token_1.Token(str.toUpperCase(), str);
+                            }
                         }
                         else {
                             _this.actual = new token_1.Token('IDENTIFIER', str);
@@ -47,6 +67,24 @@ var Tokenizer = /** @class */ (function () {
                         return _this.actual;
                     }
                     continue;
+                }
+                if (char === '@') {
+                    _this.actual = new token_1.Token('WHILE', 'while');
+                    _this.position++;
+                    return _this.actual;
+                }
+                if (char === '!') {
+                    _this.actual = new token_1.Token('FUNCTIONDECLARATION', '!');
+                    return _this.actual;
+                }
+                if (char === '/') {
+                    _this.actual = new token_1.Token('CLOSE_BUCKET', '/');
+                    return _this.actual;
+                }
+                if (char === '\\') {
+                    _this.actual = new token_1.Token('OPEN_BUCKET', "\\");
+                    //this.position++
+                    return _this.actual;
                 }
                 if (char === '=' && nextChar === '=') {
                     _this.actual = new token_1.Token('COMPARISON', '==');
@@ -63,8 +101,9 @@ var Tokenizer = /** @class */ (function () {
                     _this.position++;
                     return _this.actual;
                 }
-                if (char === '=') {
-                    _this.actual = new token_1.Token('ASSIGNMENT', '=');
+                if (char === '<' && nextChar === '-') {
+                    _this.actual = new token_1.Token('ASSIGNMENT', '<-');
+                    _this.position++;
                     return _this.actual;
                 }
                 if (char === '>') {
@@ -75,12 +114,12 @@ var Tokenizer = /** @class */ (function () {
                     _this.actual = new token_1.Token('COMPARISON', '<');
                     return _this.actual;
                 }
-                if (char === '{') {
-                    _this.actual = new token_1.Token('OPEN_BRACKETS', '{');
+                if (char === '[') {
+                    _this.actual = new token_1.Token('OPEN_BRACKETS', '[');
                     return _this.actual;
                 }
-                if (char === '}') {
-                    _this.actual = new token_1.Token('CLOSE_BRACKETS', '}');
+                if (char === ']') {
+                    _this.actual = new token_1.Token('CLOSE_BRACKETS', ']');
                     return _this.actual;
                 }
                 if (char === ';') {
@@ -109,8 +148,8 @@ var Tokenizer = /** @class */ (function () {
                     _this.actual = new token_1.Token('MULTIPLY', '*');
                     return _this.actual;
                 }
-                if (char === '/') {
-                    _this.actual = new token_1.Token('DIVISION', '/');
+                if (char === '%') {
+                    _this.actual = new token_1.Token('DIVISION', '%');
                     return _this.actual;
                 }
                 if (char === ',') {
