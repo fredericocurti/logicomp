@@ -15,6 +15,7 @@ if (input) {
         result.evaluate();
     }
     catch (error) {
+        console.log("\n\u001B[31mEVALUATION ERROR:\u001B[0m");
         console.error(error.message);
         process.exit(1);
     }

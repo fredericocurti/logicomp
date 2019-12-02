@@ -4,10 +4,10 @@ var token_1 = require("./token");
 var Tokenizer = /** @class */ (function () {
     function Tokenizer(origin) {
         this.line = 0;
-        this.reservedKeywords = ['print', 'if', 'else', 'scan', 'I', 'B', 'true', 'false'];
+        this.reservedKeywords = ['I', 'B', 'true', 'false'];
         this.types = {
             I: 'INT',
-            B: 'BOOl'
+            B: 'BOOL'
         };
         this.origin = origin;
         this.position = 0;
@@ -41,8 +41,8 @@ var Tokenizer = /** @class */ (function () {
                     }
                     continue;
                 }
-                if (char === '-' && nextChar === '>') {
-                    _this.actual = new token_1.Token('RETURN', '->');
+                if (char === '>' && nextChar === '<') {
+                    _this.actual = new token_1.Token('RETURN', '><');
                     _this.position++;
                     return _this.actual;
                 }
@@ -68,9 +68,20 @@ var Tokenizer = /** @class */ (function () {
                     }
                     continue;
                 }
+                if (char === '?') {
+                    _this.actual = new token_1.Token('IF', '?');
+                    return _this.actual;
+                }
+                if (char === '¿') {
+                    _this.actual = new token_1.Token('ELSE', '¿');
+                    return _this.actual;
+                }
                 if (char === '@') {
+                    _this.actual = new token_1.Token('DO', 'do');
+                    return _this.actual;
+                }
+                if (char === '~') {
                     _this.actual = new token_1.Token('WHILE', 'while');
-                    _this.position++;
                     return _this.actual;
                 }
                 if (char === '!') {
@@ -86,9 +97,8 @@ var Tokenizer = /** @class */ (function () {
                     //this.position++
                     return _this.actual;
                 }
-                if (char === '=' && nextChar === '=') {
-                    _this.actual = new token_1.Token('COMPARISON', '==');
-                    _this.position++;
+                if (char === '=') {
+                    _this.actual = new token_1.Token('COMPARISON', '=');
                     return _this.actual;
                 }
                 if (char === '&' && nextChar === '&') {
@@ -98,6 +108,16 @@ var Tokenizer = /** @class */ (function () {
                 }
                 if (char === '|' && nextChar === '|') {
                     _this.actual = new token_1.Token('OR', '||');
+                    _this.position++;
+                    return _this.actual;
+                }
+                if (char === '>' && nextChar === '>') {
+                    _this.actual = new token_1.Token('PRINT', '>>');
+                    _this.position++;
+                    return _this.actual;
+                }
+                if (char === '<' && nextChar === '<') {
+                    _this.actual = new token_1.Token('SCAN', '<<');
                     _this.position++;
                     return _this.actual;
                 }

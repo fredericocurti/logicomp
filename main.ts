@@ -11,6 +11,7 @@ if (input) {
         const result = Parser.run(filteredInput, input)
         result.evaluate()
     } catch (error) {
+        console.log(`\n\x1b[31mEVALUATION ERROR:\x1b[0m`)
         console.error(error.message)
         process.exit(1);
     }

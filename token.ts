@@ -38,6 +38,7 @@ export type TokenType =
     | TokenFunctionDeclaration
     | TokenOpenBucket
     | TokenCloseBucket
+    | TokenDo
 
 type TokenFunctionDeclaration = {
     type: 'FUNCTIONDECLARATION'
@@ -151,7 +152,12 @@ type TokenPrint = {
 
 type TokenWhile = {
     type: 'WHILE'
-    value: 'while'
+    value: '~'
+}
+
+type TokenDo = {
+    type: 'DO',
+    value: '@'
 }
 
 type TokenIf = {

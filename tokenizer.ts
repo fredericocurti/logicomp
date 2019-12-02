@@ -5,10 +5,10 @@ export class Tokenizer {
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
     line: number = 0;
-    reservedKeywords = ['print', 'if', 'else', 'scan', 'I', 'B', 'true', 'false']
+    reservedKeywords = ['I', 'B', 'true', 'false']
     types = {
         I: 'INT',
-        B: 'BOOl'
+        B: 'BOOL'
     }
 
     constructor(origin: string) {
@@ -49,8 +49,8 @@ export class Tokenizer {
                     continue
                 }
 
-                if (char === '-' && nextChar === '>') {
-                    this.actual = new Token('RETURN', '->')
+                if (char === '>' && nextChar === '<') {
+                    this.actual = new Token('RETURN', '><')
                     this.position++
                     return this.actual
                 }
@@ -78,9 +78,23 @@ export class Tokenizer {
                     continue
                 }
 
+                if (char === '?') {
+                    this.actual = new Token('IF', '?')
+                    return this.actual
+                }
+
+                if (char === '¿') {
+                    this.actual = new Token('ELSE', '¿')
+                    return this.actual
+                }
+
                 if (char === '@') {
+                    this.actual = new Token('DO', 'do')
+                    return this.actual
+                }
+
+                if (char === '~') {
                     this.actual = new Token('WHILE', 'while')
-                    this.position++
                     return this.actual
                 }
 
@@ -100,9 +114,8 @@ export class Tokenizer {
                     return this.actual
                 }
 
-                if (char === '=' && nextChar === '=') {
-                    this.actual = new Token('COMPARISON', '==')
-                    this.position++
+                if (char === '=') {
+                    this.actual = new Token('COMPARISON', '=')
                     return this.actual
                 }
 
@@ -114,6 +127,18 @@ export class Tokenizer {
 
                 if (char === '|' && nextChar === '|') {
                     this.actual = new Token('OR', '||')
+                    this.position++
+                    return this.actual
+                }
+
+                if (char === '>' && nextChar === '>') {
+                    this.actual = new Token('PRINT', '>>')
+                    this.position++
+                    return this.actual
+                }
+
+                if (char === '<' && nextChar === '<') {
+                    this.actual = new Token('SCAN', '<<')
                     this.position++
                     return this.actual
                 }

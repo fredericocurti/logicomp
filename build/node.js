@@ -53,7 +53,7 @@ var BinOp = /** @class */ (function (_super) {
             else if (_this.value === '/') {
                 return first / second;
             }
-            else if (_this.value === '==') {
+            else if (_this.value === '=') {
                 return first === second;
             }
             else if (_this.value === '>') {

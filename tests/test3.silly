@@ -1,0 +1,11 @@
+! factorial \I x/ >< I [
+    ? x = 0 [
+        >< 1;
+    ] ¿ [
+        >< x * factorial \x - 1/; 
+    ]
+]
+
+! main \/ >< I [
+    >> factorial\<</;
+]

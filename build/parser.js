@@ -21,8 +21,8 @@ var Parser = /** @class */ (function () {
             program = Parser.parseProgram();
         }
         catch (error) {
-            var errorLine = Parser.tokens.origin.split('\n')[Parser.tokens.line];
-            console.log("\n\u001B[31mERROR:\u001B[0m\n" + filePath + ":" + (Parser.tokens.line + 1) + " " + errorLine);
+            var errorLine = Parser.tokens.origin.split('\n')[Parser.tokens.line - 1];
+            console.log("\n\u001B[31mERROR: " + error.message + "\u001B[0m\n" + filePath + ":" + Parser.tokens.line + " " + errorLine);
             throw error;
         }
         if (Parser.tokens.actual.type !== 'EOF') {
@@ -59,18 +59,16 @@ var Parser = /** @class */ (function () {
                 return node;
             }
             if (token.type === 'IDENTIFIER') {
-                console.log('IDENTIFIER', token.value);
                 node = new node_1.Identifier(token.value);
                 token = Parser.tokens.selectNext();
                 /** Is a function call */
-                if (token.type === 'OPEN_PAR') {
-                    console.log('is a function call');
+                if (token.type === 'OPEN_BUCKET') {
                     Parser.tokens.selectNext();
                     node = new node_1.FunctionCall(node.value);
-                    while (Parser.tokens.actual.type !== 'CLOSE_PAR') {
+                    while (Parser.tokens.actual.type !== 'CLOSE_BUCKET') {
                         node.children.push(Parser.parseRelExpression());
                         token = Parser.tokens.actual;
-                        if (token.type !== 'COMMA' && token.type !== 'CLOSE_PAR') {
+                        if (token.type !== 'COMMA' && token.type !== 'CLOSE_BUCKET') {
                             throw new Error("Expected COMMA between arguments, found " + token.type);
                         }
                         if (token.type === 'COMMA') {
@@ -83,20 +81,8 @@ var Parser = /** @class */ (function () {
             }
             if (token.type === 'SCAN') {
                 token = Parser.tokens.selectNext();
-                if (token.type === 'OPEN_PAR') {
-                    token = Parser.tokens.selectNext();
-                    if (token.type === 'CLOSE_PAR') {
-                        token = Parser.tokens.selectNext();
-                        node = new node_1.Scan();
-                        return node;
-                    }
-                    else {
-                        throw new Error('Expected CLOSE_PAR after scan(');
-                    }
-                }
-                else {
-                    throw new Error('Expected OPEN_PAR after scan');
-                }
+                node = new node_1.Scan();
+                return node;
             }
             if (token.type === 'PLUS') {
                 Parser.tokens.selectNext();
@@ -198,29 +184,21 @@ var Parser = /** @class */ (function () {
         if (token.type === 'IF') {
             result = new node_1.If();
             token = Parser.tokens.selectNext();
-            if (token.type === 'OPEN_PAR') {
-                Parser.tokens.selectNext();
-                result.children.push(Parser.parseRelExpression());
-                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
-                    token = Parser.tokens.selectNext();
-                    result.children.push(Parser.parseStatement());
-                    token = Parser.tokens.actual;
-                    if (token.type === 'ELSE') {
-                        token = Parser.tokens.selectNext();
-                        result.children.push(Parser.parseStatement());
-                    }
-                    return result;
-                }
-                else {
-                    throw new Error('Expected CLOSE_PAR after IF condition');
-                }
+            result.children.push(Parser.parseRelExpression());
+            result.children.push(Parser.parseStatement());
+            token = Parser.tokens.actual;
+            if (token.type === 'ELSE') {
+                token = Parser.tokens.selectNext();
+                result.children.push(Parser.parseStatement());
             }
-            else {
-                throw new Error('Expected OPEN_PAR after IF');
-            }
+            return result;
         }
         else if (token.type === 'IDENTIFIER') {
-            result = new node_1.Assignment([Parser.parseRelExpression()]);
+            var relExp = Parser.parseRelExpression();
+            result = new node_1.Assignment([relExp]);
+            if (relExp.constructor.name === "FunctionCall") {
+                result = relExp;
+            }
             if (Parser.tokens.actual.type === 'ASSIGNMENT') {
                 Parser.tokens.selectNext();
                 result.children.push(Parser.parseRelExpression());
@@ -233,49 +211,28 @@ var Parser = /** @class */ (function () {
                     throw new Error('Expected SEMICOLON token after Expression');
                 }
             }
-            else {
-                throw new Error("Expected ASSIGNMENT token after IDENTIFIER " + token.value + ", found " + token.type + " " + token.value);
-            }
         }
-        else if (token.type === 'WHILE') {
+        else if (token.type === 'DO') {
             token = Parser.tokens.selectNext();
             result = new node_1.While();
-            if (token.type === 'OPEN_PAR') {
+            result.children[1] = Parser.parseBlock();
+            if (Parser.tokens.actual.type === 'WHILE') {
                 Parser.tokens.selectNext();
-                result.children.push(Parser.parseRelExpression());
-                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
-                    token = Parser.tokens.selectNext();
-                    result.children.push(Parser.parseStatement());
-                    return result;
-                }
-                else {
-                    throw new Error('Expected CLOSE_PAR after WHILE condition');
-                }
+                result.children[0] = Parser.parseRelExpression();
+                return result;
             }
             else {
-                throw new Error('Expected OPEN_PAR after WHILE');
+                throw new Error("Expected ~ before condtion at WHILE (@), found " + token.type);
             }
         }
         else if (token.type === 'PRINT') {
             token = Parser.tokens.selectNext();
-            if (token.type === 'OPEN_PAR') {
-                token = Parser.tokens.selectNext();
-                result = new node_1.Print([Parser.parseExpression()]);
-                if (Parser.tokens.actual.type === 'CLOSE_PAR') {
-                    token = Parser.tokens.selectNext();
-                    if (token.type === 'SEMICOLON') {
-                        Parser.tokens.selectNext();
-                    }
-                    else {
-                        throw new Error('Expected SEMICOLON token after PRINT');
-                    }
-                }
-                else {
-                    throw new Error("Expected CLOSE_PAR after PRINT, found " + token.type);
-                }
+            result = new node_1.Print([Parser.parseExpression()]);
+            if (Parser.tokens.actual.type === 'SEMICOLON') {
+                Parser.tokens.selectNext();
             }
             else {
-                throw new Error('Expected OPEN_PAR after PRINT');
+                throw new Error('Expected SEMICOLON token after PRINT');
             }
             return result;
         }
