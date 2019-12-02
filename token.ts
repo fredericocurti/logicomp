@@ -35,6 +35,15 @@ export type TokenType =
     | TokenFalse
     | TokenComma
     | TokenReturn
+    | TokenFunctionDeclaration
+    | TokenOpenBucket
+    | TokenCloseBucket
+    | TokenDo
+
+type TokenFunctionDeclaration = {
+    type: 'FUNCTIONDECLARATION'
+    value: '!'
+}
 
 type TokenPlus = {
     type: 'PLUS'
@@ -101,14 +110,24 @@ type TokenClosePar = {
     value: ')'
 }
 
+type TokenOpenBucket = {
+    type: 'OPEN_BUCKET'
+    value: '\\'
+}
+
+type TokenCloseBucket = {
+    type: 'CLOSE_BUCKET'
+    value: '/'
+}
+
 type TokenOpenBrackets = {
     type: 'OPEN_BRACKETS'
-    value: '{'
+    value: '['
 }
 
 type TokenCloseBrackets = {
     type: 'CLOSE_BRACKETS'
-    value: '}'
+    value: ']'
 }
 
 type TokenSemicolon = {
@@ -133,7 +152,12 @@ type TokenPrint = {
 
 type TokenWhile = {
     type: 'WHILE'
-    value: 'while'
+    value: '~'
+}
+
+type TokenDo = {
+    type: 'DO',
+    value: '@'
 }
 
 type TokenIf = {

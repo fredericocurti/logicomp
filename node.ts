@@ -45,7 +45,7 @@ export class BinOp extends Node {
             return first * second
         } else if (this.value === '/') {
             return first / second
-        } else if (this.value === '==') {
+        } else if (this.value === '=') {
             return first === second
         } else if (this.value === '>') {
             return first > second

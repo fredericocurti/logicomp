@@ -11,11 +11,13 @@ if (input) {
     try {
         var file = fs_1.default.readFileSync(input, { encoding: 'utf-8' });
         var filteredInput = preprocessor_1.Preprocessor.filter(file);
-        var result = parser_1.Parser.run(filteredInput);
+        var result = parser_1.Parser.run(filteredInput, input);
         result.evaluate();
     }
     catch (error) {
+        console.log("\n\u001B[31mEVALUATION ERROR:\u001B[0m");
         console.error(error.message);
+        process.exit(1);
     }
 }
 else {

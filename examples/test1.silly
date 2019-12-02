@@ -1,0 +1,36 @@
+! sum \I a, I b/ >< I [
+    >> a + b;
+    >< a + b;
+]
+
+! main \/ >< I [
+    I c;
+    I i;
+    B b;
+    b <- true;
+    c <- 0;
+
+    // read from stdin into i
+    i <- <<;
+
+    sum\2, 2/;
+    
+    // if else
+    ? 2 + 2 = 4 [ 
+        >> 1;
+    ] ¿ [
+        >> 0;
+    ]
+     
+
+    // loop while c < 5
+    @ [ 
+        c <- c + 1;
+        >> c;
+    ] ~ c < 5;
+
+    // print 10 divided by 5
+    >> 10 % 5;
+    >> b;
+    >< c;
+]

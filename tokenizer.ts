@@ -1,10 +1,15 @@
 import { Token, TokenType } from "./token";
 
-export class    Tokenizer {
+export class Tokenizer {
     origin: string; /** Código fonte que será tokenizado */
     position: number; /** Posição atual que o tokenizer está separando */
     actual: Token; /** O último token separando */
-    reservedKeywords = ['print', 'if', 'while', 'else', 'scan', 'int', 'bool', 'true', 'false', 'return']
+    line: number = 0;
+    reservedKeywords = ['I', 'B', 'true', 'false']
+    types = {
+        I: 'INT',
+        B: 'BOOL'
+    }
 
     constructor(origin: string) {
         this.origin = origin
@@ -25,6 +30,10 @@ export class    Tokenizer {
                 nextChar = this.origin[this.position + 1]
                 this.position++
 
+                if (char === '\n') {
+                    this.line++
+                }
+
                 // Skip whitespace or newline character
                 if (char === ' ' || char === '\n') {
                     continue
@@ -40,13 +49,27 @@ export class    Tokenizer {
                     continue
                 }
 
+                if (char === '>' && nextChar === '<') {
+                    this.actual = new Token('RETURN', '><')
+                    this.position++
+                    return this.actual
+                }
+
                 // Stack identifier
                 if (char && char.match(/[a-z0-9]/i)) {
                     str += char
                     if (nextChar === undefined || !nextChar.match(/[a-z0-9]/i)) {
                         // @ts-ignore
                         if (this.reservedKeywords.includes(str)) {
-                            this.actual = new Token(str.toUpperCase() as TokenType['type'], str)
+                            // @ts-ignore
+                            if (this.types[str]) {
+                                // @ts-ignore
+                                this.actual = new Token(this.types[str], str)
+                            } else {
+                                this.actual = new Token(str.toUpperCase() as TokenType['type'], str)
+                            }
+                            
+                            
                         } else {
                             this.actual = new Token('IDENTIFIER', str)
                         }
@@ -55,9 +78,44 @@ export class    Tokenizer {
                     continue
                 }
 
-                if (char === '=' && nextChar === '=') {
-                    this.actual = new Token('COMPARISON', '==')
-                    this.position++
+                if (char === '?') {
+                    this.actual = new Token('IF', '?')
+                    return this.actual
+                }
+
+                if (char === '¿') {
+                    this.actual = new Token('ELSE', '¿')
+                    return this.actual
+                }
+
+                if (char === '@') {
+                    this.actual = new Token('DO', 'do')
+                    return this.actual
+                }
+
+                if (char === '~') {
+                    this.actual = new Token('WHILE', 'while')
+                    return this.actual
+                }
+
+                if (char === '!') {
+                    this.actual = new Token('FUNCTIONDECLARATION', '!')
+                    return this.actual
+                }
+
+                if (char === '/') {
+                    this.actual = new Token('CLOSE_BUCKET', '/')
+                    return this.actual
+                }
+
+                if (char === '\\') {
+                    this.actual = new Token('OPEN_BUCKET', `\\`)
+                    //this.position++
+                    return this.actual
+                }
+
+                if (char === '=') {
+                    this.actual = new Token('COMPARISON', '=')
                     return this.actual
                 }
 
@@ -73,8 +131,21 @@ export class    Tokenizer {
                     return this.actual
                 }
 
-                if (char === '=') {
-                    this.actual = new Token('ASSIGNMENT', '=')
+                if (char === '>' && nextChar === '>') {
+                    this.actual = new Token('PRINT', '>>')
+                    this.position++
+                    return this.actual
+                }
+
+                if (char === '<' && nextChar === '<') {
+                    this.actual = new Token('SCAN', '<<')
+                    this.position++
+                    return this.actual
+                }
+
+                if (char === '<' && nextChar === '-') {
+                    this.actual = new Token('ASSIGNMENT', '<-')
+                    this.position++
                     return this.actual
                 }
 
@@ -88,13 +159,13 @@ export class    Tokenizer {
                     return this.actual
                 }
 
-                if (char === '{') {
-                    this.actual = new Token('OPEN_BRACKETS', '{')
+                if (char === '[') {
+                    this.actual = new Token('OPEN_BRACKETS', '[')
                     return this.actual
                 }
 
-                if (char === '}') {
-                    this.actual = new Token('CLOSE_BRACKETS', '}')
+                if (char === ']') {
+                    this.actual = new Token('CLOSE_BRACKETS', ']')
                     return this.actual
                 }
 
@@ -130,8 +201,8 @@ export class    Tokenizer {
                     return this.actual
                 }
 
-                if (char === '/') {
-                    this.actual = new Token('DIVISION', '/')
+                if (char === '%') {
+                    this.actual = new Token('DIVISION', '%')
                     return this.actual
                 }
 
